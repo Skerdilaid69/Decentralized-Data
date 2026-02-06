@@ -6,117 +6,115 @@ const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState('');
   const [level, setLevel] = useState('');
+  const [providerId, setProviderId] = useState('');
+  const [category, setCategory] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Construct the query string for filtering based on user input
+  // Λειτουργία αναζήτησης που καλείται από το κουμπί ή αυτόματα [cite: 61, 101]
+  const fetchCourses = () => {
     const query = new URLSearchParams({
       search: searchTerm,
       language: language,
-      level: level
+      level: level,
+      provider_id: providerId,
+      category: category
     }).toString();
 
-    // Fetching from your Node.js API (Port 5000)
     fetch(`http://localhost:5001/api/courses?${query}`)
       .then((response) => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
       })
       .then((data) => {
-        // Ensure data is an array before setting state
         setCourses(Array.isArray(data) ? data : []);
       })
-      .catch((error) => {
-        console.error('Error fetching courses:', error);
-      });
-  }, [searchTerm, language, level]); // Re-run whenever a filter changes
+      .catch((error) => console.error('Error fetching courses:', error));
+  };
 
-  const handleViewDetails = (id) => {
-    // Navigates to the CourseDetails page using the course ID
-    navigate(`/courses/${id}`);
+  // Αρχικό φόρτωμα δεδομένων [cite: 104]
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const handleSearchClick = (e) => {
+    e.preventDefault();
+    fetchCourses();
   };
 
   return (
-    <div className="search-page" style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
       <header style={{ borderBottom: '2px solid #eee', marginBottom: '30px', paddingBottom: '20px' }}>
-        <h1 style={{ fontSize: '2.5rem', color: '#333', margin: '0' }}>Course Aggregator</h1>
+        <h1 style={{ fontSize: '2.5rem', color: '#333' }}>Course Aggregator</h1>
         
-        <div className="filters" style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-          {/* Requirement: Search by title/keywords */}
+        {/* Φόρμα Φίλτρων Αναζήτησης [cite: 61] */}
+        <form onSubmit={handleSearchClick} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginTop: '20px' }}>
+          
+          {/* Αναζήτηση βάσει τίτλου/λέξεων-κλειδιών  */}
           <input 
             type="text" 
-            placeholder="Search by title..." 
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', flex: '2', fontSize: '1rem' }}
+            placeholder="Search by title or keywords..." 
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           
-          {/* Requirement: Filter by Language */}
-          <select 
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', flex: '1', cursor: 'pointer' }}
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
+          {/* Φιλτράρισμα βάσει γλώσσας [cite: 64] */}
+          <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Languages</option>
-            <option value="English">English</option>
-            <option value="Greek">Greek</option>
-            <option value="Arabic">Arabic</option>
-            <option value="French">French</option>
+            <option value="en">English</option>
+            <option value="el">Greek</option>
+            <option value="fr">French</option>
+            <option value="ar">Arabic</option>
           </select>
 
-          {/* Requirement: Filter by Level */}
-          <select 
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', flex: '1', cursor: 'pointer' }}
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-          >
+          {/* Φιλτράρισμα βάσει επιπέδου [cite: 65] */}
+          <select value={level} onChange={(e) => setLevel(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Levels</option>
             <option value="Beginner">Beginner</option>
-            <option value="Advanced">Advanced</option>
             <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
           </select>
-        </div>
+
+          {/* Φιλτράρισμα βάσει πηγής repository [cite: 66] */}
+          <select value={providerId} onChange={(e) => setProviderId(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
+            <option value="">All Sources</option>
+            <option value="1">Coursera</option>
+            <option value="2">edX</option>
+          </select>
+
+          {/* Φιλτράρισμα βάσει θεματικής περιοχής [cite: 67] */}
+          <input 
+            type="text" 
+            placeholder="Category (e.g. Data Science)..." 
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
+
+          <button 
+            type="submit"
+            style={{ backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            Search
+          </button>
+        </form>
       </header>
 
-      {/* Requirement: Course List View (Grid Layout) */}
-      <div className="course-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
+      {/* Προβολή λίστας μαθημάτων [cite: 68] */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
         {courses.length > 0 ? (
           courses.map((course) => (
-            <div key={course.id} className="course-card" style={{ 
-              border: '1px solid #ddd', 
-              borderRadius: '15px', 
-              padding: '20px', 
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)', 
-              backgroundColor: '#fff',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}>
-              <div>
-                <h3 style={{ marginTop: '0', color: '#007bff', fontSize: '1.2rem' }}>{course.title}</h3>
-                <p style={{ margin: '5px 0' }}><strong>Source:</strong> {course.source_name}</p>
-                <p style={{ margin: '5px 0' }}><strong>Level:</strong> <span style={{ color: '#555' }}>{course.level}</span></p>
-                <p style={{ color: '#777', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                  {course.description ? `${course.description.substring(0, 80)}...` : 'No description provided.'}
-                </p>
-              </div>
+            <div key={course.id} style={{ border: '1px solid #ddd', borderRadius: '15px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', backgroundColor: '#fff' }}>
+              <h3 style={{ color: '#007bff', marginBottom: '10px' }}>{course.title}</h3>
+              <p><strong>Source:</strong> {course.source_name}</p> {/* Ένδειξη πηγής  */}
+              <p><strong>Level:</strong> {course.level}</p>
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                {course.description ? `${course.description.substring(0, 100)}...` : 'No description.'}
+              </p>
               
               <button 
-                onClick={() => handleViewDetails(course.id)}
-                style={{ 
-                  backgroundColor: '#007bff', 
-                  color: 'white', 
-                  border: 'none', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  cursor: 'pointer', 
-                  fontWeight: 'bold', 
-                  width: '100%', 
-                  marginTop: '15px',
-                  transition: 'background 0.2s'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#0056b3'}
-                onMouseOut={(e) => e.target.style.backgroundColor = '#007bff'}
+                onClick={() => navigate(`/courses/${course.id}`)} 
+                style={{ backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', width: '100%', marginTop: '10px' }}
               >
                 View Details
               </button>

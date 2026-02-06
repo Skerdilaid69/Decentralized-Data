@@ -1,37 +1,44 @@
     const Course = require('./models');
     const db = require('./db'); 
-    exports.getCourses = async (req, res) => {
-        try {
-            const { search, language, level } = req.query;
-            
-            let sql = `
-                SELECT courses.*, providers.name AS source_name 
-                FROM courses 
-                INNER JOIN providers ON courses.provider_id = providers.id 
-                WHERE 1=1
-            `;
-            const params = [];
+exports.getCourses = async (req, res) => {
+    try {
+        const { search, language, level, provider_id, category } = req.query;
+        
+        let sql = `
+            SELECT courses.*, providers.name AS source_name 
+            FROM courses 
+            INNER JOIN providers ON courses.provider_id = providers.id 
+            WHERE 1=1
+        `;
+        const params = [];
 
-            if (search) {
-                sql += ' AND (title LIKE ? OR description LIKE ?)';
-                params.push(`%${search}%`, `%${search}%`);
-            }
-            if (language) {
-                sql += ' AND language = ?';
-                params.push(language);
-            }
-            if (level) {
-                sql += ' AND level = ?';
-                params.push(level);
-            }
-
-            const [rows] = await db.query(sql, params);
-            res.json(rows);
-        } catch (err) {
-            console.error("Database error:", err.message);
-            res.status(500).json({ error: "Internal Server Error" });
+        if (search) {
+            sql += ' AND (title LIKE ? OR description LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
         }
-    };
+        if (language && language !== '') {
+            sql += ' AND language LIKE ?';
+            params.push(`%${language}%`);
+        }
+        if (level) {
+            sql += ' AND level = ?';
+            params.push(level);
+        }
+        if (provider_id) {
+            sql += ' AND provider_id = ?';
+            params.push(provider_id);
+        }
+        if (category) {
+            sql += ' AND category LIKE ?';
+            params.push(`%${category}%`);
+        }
+
+        const [rows] = await db.query(sql, params);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
 
     exports.getCourseById = async (req, res) => {
         try {
