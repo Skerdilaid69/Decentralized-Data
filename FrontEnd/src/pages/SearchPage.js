@@ -60,6 +60,8 @@ const SearchPage = () => {
             <option value="">All Languages</option>
             <option value="English">English</option>
             <option value="Greek">Greek</option>
+            <option value="Arabic">Arabic</option>
+            <option value="French">French</option>
           </select>
 
           {/* Requirement: Filter by Level */}
@@ -71,6 +73,7 @@ const SearchPage = () => {
             <option value="">All Levels</option>
             <option value="Beginner">Beginner</option>
             <option value="Advanced">Advanced</option>
+            <option value="Intermediate">Intermediate</option>
           </select>
         </div>
       </header>
@@ -122,7 +125,6 @@ const SearchPage = () => {
         ) : (
           <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '50px', color: '#888' }}>
             <h3>No courses found.</h3>
-            <p>Check if your BackEnd is running and CORS is enabled.</p>
           </div>
         )}
       </div>

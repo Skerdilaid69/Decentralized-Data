@@ -1,32 +1,91 @@
-const db = require('./db');
-const axios = require('axios'); // Install with: npm install axios
+const axios = require('axios');
+const db = require('./db'); 
+require('dotenv').config();
 
-const harvestFromSourceA = async () => {
-  try {
-    // Requirement 4.1.2: Calling an external API (Example)
-    const response = await axios.get('https://api.sample-mooc.com/courses'); 
-    const externalCourses = response.data;
+async function getProviderId(name, url) {
+    const [rows] = await db.query('SELECT id FROM providers WHERE name = ?', [name]);
+    if (rows.length > 0) return rows[0].id;
 
-    for (let course of externalCourses) {
-      // Requirement 4.1.2.2: Transforming to your unified schema
-      const unifiedData = {
-        title: course.name,
-        description: course.summary,
-        language: course.lang || 'English',
-        level: course.difficulty,
-        source_name: 'Repository A',
-        source_url: 'https://repository-a.com'
-      };
-
-      await db.query(
-        'INSERT INTO courses (title, description, language, level, source_name, source_url) VALUES (?, ?, ?, ?, ?, ?)',
-        [unifiedData.title, unifiedData.description, unifiedData.language, unifiedData.level, unifiedData.source_name, unifiedData.source_url]
-      );
-    }
-    console.log("Harvesting complete!");
-  } catch (error) {
-    console.error("Harvesting failed:", error);
+    const [result] = await db.query(
+        'INSERT INTO providers (name, website_url) VALUES (?, ?)',
+        [name, url]
+    );
+    return result.insertId;
   }
-};
+async function harvestCoursera() {
+    console.log("--- Starting Coursera Harvest ---");
+    const providerId = await getProviderId('Coursera', 'https://www.coursera.org');
+    
+    try {
+        const response = await axios.get('https://api.coursera.org/api/courses.v1?limit=10&fields=description,difficultyLevel,primaryLanguages,domainIds');
+        const courses = response.data.elements;
 
-module.exports = { harvestFromSourceA };
+        for (let course of courses) {
+            const values = [
+                providerId,
+                course.name,
+                course.description || "No description available",
+                course.domainIds ? course.domainIds.join(', ') : 'General', 
+                course.primaryLanguages ? course.primaryLanguages[0] : 'en', 
+                course.difficultyLevel || 'Beginner', 
+                `https://www.coursera.org/learn/${course.slug}` 
+            ];
+
+            await db.query(
+                `INSERT INTO courses (provider_id, title, description, category, language, level, url) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?) 
+                 ON DUPLICATE KEY UPDATE last_updated = CURRENT_TIMESTAMP`, 
+                values
+            );
+        }
+        console.log(`✅ Coursera: Imported ${courses.length} courses.`);
+    } catch (err) {
+        console.error("❌ Coursera Error:", err.message);
+    }
+}
+
+async function harvestEdX() {
+    console.log("--- Starting edX Harvest ---");
+    const providerId = await getProviderId('edX', 'https://www.edx.org');
+    
+    try {
+        // This is a public endpoint that allows anonymous access
+        const response = await axios.get('https://courses.edx.org/api/courses/v1/courses/');
+        const courses = response.data.results;
+
+        for (let course of courses.slice(0, 10)) {
+            const values = [
+                providerId,
+                course.name,
+                course.short_description || "An open course from edX.",
+                course.blocks_url || "Education", // Temporary category
+                "en",
+                "Intermediate", // Default level
+                `https://www.edx.org/course/${course.id}`
+            ];
+
+            await db.query(
+                `INSERT INTO courses (provider_id, title, description, category, language, level, url) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                values
+            );
+        }
+        console.log(`✅ edX: Imported ${courses.length > 10 ? 10 : courses.length} courses.`);
+    } catch (err) {
+        console.error("❌ edX Error:", err.message);
+    }
+}
+
+async function runHarvester() {
+    try {
+        await harvestCoursera();
+        await harvestEdX();
+        console.log("\n🚀 All harvesting jobs completed successfully!");
+    } catch (error) {
+        console.error("Critical error during harvesting:", error);
+    } finally {
+        process.exit();
+    }
+}
+
+runHarvester();
