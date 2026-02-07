@@ -11,9 +11,9 @@ async function getProviderId(name, url) {
         [name, url]
     );
     return result.insertId;
-  }
+}
+
 async function harvestCoursera() {
-    console.log("--- Starting Coursera Harvest ---");
     const providerId = await getProviderId('Coursera', 'https://www.coursera.org');
     
     try {
@@ -23,6 +23,7 @@ async function harvestCoursera() {
         for (let course of courses) {
             const values = [
                 providerId,
+                course.id,
                 course.name,
                 course.description || "No description available",
                 course.domainIds ? course.domainIds.join(', ') : 'General', 
@@ -32,8 +33,8 @@ async function harvestCoursera() {
             ];
 
             await db.query(
-                `INSERT INTO courses (provider_id, title, description, category, language, level, url) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?) 
+                `INSERT INTO courses (provider_id, external_id, title, description, category, language, level, url) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
                  ON DUPLICATE KEY UPDATE 
                     title = VALUES(title),
                     description = VALUES(description),
@@ -42,14 +43,13 @@ async function harvestCoursera() {
                 values
             );
         }
-        console.log(`✅ Coursera: Imported ${courses.length} courses.`);
+        return courses.length;
     } catch (err) {
-        console.error("❌ Coursera Error:", err.message);
+        throw new Error("Coursera Harvest Failed: " + err.message);
     }
 }
 
 async function harvestEdX() {
-    console.log("--- Starting edX Harvest ---");
     const providerId = await getProviderId('edX', 'https://www.edx.org');
     
     try {
@@ -63,6 +63,7 @@ async function harvestEdX() {
 
             const values = [
                 providerId,
+                course.id,
                 course.name,
                 course.short_description || "An open course from edX.",
                 categoryName, 
@@ -72,8 +73,8 @@ async function harvestEdX() {
             ];
 
            await db.query(
-                `INSERT INTO courses (provider_id, title, description, category, language, level, url) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?) 
+                `INSERT INTO courses (provider_id, external_id, title, description, category, language, level, url) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
                  ON DUPLICATE KEY UPDATE 
                     title = VALUES(title),
                     description = VALUES(description),
@@ -82,22 +83,10 @@ async function harvestEdX() {
                 values
             );
         }
-        console.log(`✅ edX: Imported ${courses.length > 10 ? 10 : courses.length} courses.`);
+        return courses.length > 10 ? 10 : courses.length;
     } catch (err) {
-        console.error("❌ edX Error:", err.message);
+        throw new Error("edX Harvest Failed: " + err.message);
     }
 }
 
-async function runHarvester() {
-    try {
-        await harvestCoursera();
-        await harvestEdX();
-        console.log("\n🚀 All harvesting jobs completed successfully!");
-    } catch (error) {
-        console.error("Critical error during harvesting:", error);
-    } finally {
-        process.exit();
-    }
-}
-
-runHarvester();
+module.exports = { harvestCoursera, harvestEdX };

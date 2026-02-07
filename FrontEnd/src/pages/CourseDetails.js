@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-
 const CourseDetails = () => {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
@@ -20,43 +19,54 @@ const CourseDetails = () => {
   );
 
   return (
-    <div className="details-page-wrapper">
+    <div className="details-page-wrapper" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
       <div className="container">
-        <Link to="/" className="back-link">← Back to Search</Link>
+        <Link to="/" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>← Back to Search</Link>
         
-        <header className="details-header">
-          <h1>{course.title}</h1>
-          <div className="meta-tags">
-            <span className="badge source-badge">{course.source_name}</span>
-            <span className={`badge level-badge ${course.level.toLowerCase()}`}>{course.level}</span>
-            <span className="badge lang-badge">{course.language}</span>
+        <header className="details-header" style={{ marginTop: '20px' }}>
+          <h1 style={{ fontSize: '2.2rem' }}>{course.title}</h1>
+          <div className="meta-tags" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <span style={{ padding: '5px 12px', backgroundColor: '#e9ecef', borderRadius: '20px', fontSize: '0.85rem' }}>{course.source_name}</span>
+            <span style={{ padding: '5px 12px', backgroundColor: '#007bff', color: 'white', borderRadius: '20px', fontSize: '0.85rem' }}>{course.level}</span>
+            <span style={{ padding: '5px 12px', backgroundColor: '#6c757d', color: 'white', borderRadius: '20px', fontSize: '0.85rem' }}>{course.language}</span>
           </div>
         </header>
 
-        <main className="details-content">
+        <main className="details-content" style={{ marginTop: '30px' }}>
           <section className="description-section">
-            <h3>Description</h3>
-            <p>{course.description}</p>
+            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Description</h3>
+            <p style={{ lineHeight: '1.6', color: '#444' }}>{course.description}</p>
           </section>
 
-          <section className="cta-section">
-            <a href={course.source_url} target="_blank" rel="noreferrer">
-              <button className="register-button">Register / Access Course</button>
+          <section className="cta-section" style={{ marginTop: '30px' }}>
+            <a href={course.url} target="_blank" rel="noreferrer">
+              <button style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                Register / Access Course
+              </button>
             </a>
           </section>
         </main>
 
-        <footer className="recommendations-section">
-  <hr />
-  <h3>Recommended Similar Courses</h3>
-  <div className="recommendation-list" style={{ display: 'flex', gap: '10px' }}>
-    {course.recommendations && course.recommendations.map(rec => (
-      <Link key={rec.id} to={`/courses/${rec.id}`} className="badge source-badge" style={{ textDecoration: 'none' }}>
-        {rec.title}
-      </Link>
-    ))}
-  </div>
-</footer>
+        <footer className="recommendations-section" style={{ marginTop: '50px' }}>
+          <hr style={{ border: '0', borderTop: '1px solid #eee' }} />
+          <h3>Recommended Similar Courses</h3>
+          <div className="recommendation-list" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '20px' }}>
+            {course.recommendations && course.recommendations.length > 0 ? (
+              course.recommendations.map(rec => (
+                <Link 
+                  key={rec.id} 
+                  to={`/courses/${rec.id}`} 
+                  style={{ textDecoration: 'none', padding: '12px', border: '1px solid #ddd', borderRadius: '10px', backgroundColor: '#f8f9fa', color: '#333', fontSize: '0.9rem' }}
+                >
+                  <strong>{rec.title}</strong>
+                  <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '5px' }}>Source: {rec.source_name}</div>
+                </Link>
+              ))
+            ) : (
+              <p style={{ color: '#888' }}>No recommendations available yet.</p>
+            )}
+          </div>
+        </footer>
       </div>
     </div>
   );

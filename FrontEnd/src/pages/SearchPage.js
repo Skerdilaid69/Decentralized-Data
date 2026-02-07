@@ -30,13 +30,38 @@ const SearchPage = () => {
       .catch((error) => console.error('Error fetching courses:', error));
   }, [searchTerm, language, level, providerId, category]); 
 
+  const handleSync = async (provider) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/sync/${provider}`);
+      const data = await response.json();
+      alert(data.message);
+      window.location.reload(); 
+    } catch (error) {
+      alert("Sync failed: " + error.message);
+    }
+  };
+
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
       <header style={{ borderBottom: '2px solid #eee', marginBottom: '30px', paddingBottom: '20px' }}>
         <h1 style={{ fontSize: '2.5rem', color: '#333' }}>Course Aggregator</h1>
         
+        <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => handleSync('coursera')} 
+            style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+          >
+            🔄 Sync Coursera
+          </button>
+          <button 
+            onClick={() => handleSync('edx')} 
+            style={{ padding: '10px 20px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+          >
+            🔄 Sync edX
+          </button>
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '20px' }}>
-          
           <input 
             type="text" 
             placeholder="Search by title..." 
@@ -44,29 +69,24 @@ const SearchPage = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          
           <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Languages</option>
             <option value="en">English</option>
             <option value="el">Greek</option>
             <option value="fr">French</option>
             <option value="ar">Arabic</option>
-
           </select>
-
           <select value={level} onChange={(e) => setLevel(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Levels</option>
             <option value="Beginner">Beginner</option>
             <option value="Intermediate">Intermediate</option>
             <option value="Advanced">Advanced</option>
           </select>
-
           <select value={providerId} onChange={(e) => setProviderId(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Sources</option>
             <option value="1">Coursera</option>
             <option value="2">edX</option>
           </select>
-
           <input 
             type="text" 
             placeholder="Category (e.g. CS)..." 
@@ -87,7 +107,6 @@ const SearchPage = () => {
               <p style={{ color: '#666', fontSize: '0.9rem' }}>
                 {course.description ? `${course.description.substring(0, 100)}...` : 'No description.'}
               </p>
-              
               <button 
                 onClick={() => navigate(`/courses/${course.id}`)}
                 style={{ backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', width: '100%', marginTop: '10px' }}
