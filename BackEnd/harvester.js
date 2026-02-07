@@ -49,24 +49,28 @@ async function harvestEdX() {
     const providerId = await getProviderId('edX', 'https://www.edx.org');
     
     try {
-        // This is a public endpoint that allows anonymous access
         const response = await axios.get('https://courses.edx.org/api/courses/v1/courses/');
         const courses = response.data.results;
 
         for (let course of courses.slice(0, 10)) {
+            const categoryName = (course.subjects && course.subjects.length > 0) 
+                ? course.subjects[0].name 
+                : 'Education'; 
+
             const values = [
                 providerId,
                 course.name,
                 course.short_description || "An open course from edX.",
-                course.blocks_url || "Education", // Temporary category
+                categoryName, 
                 "en",
-                "Intermediate", // Default level
+                "Intermediate", 
                 `https://www.edx.org/course/${course.id}`
             ];
 
             await db.query(
                 `INSERT INTO courses (provider_id, title, description, category, language, level, url) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                 VALUES (?, ?, ?, ?, ?, ?, ?) 
+                 ON DUPLICATE KEY UPDATE last_updated = CURRENT_TIMESTAMP`, // Added for consistency
                 values
             );
         }

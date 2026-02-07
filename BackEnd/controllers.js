@@ -28,10 +28,10 @@ exports.getCourses = async (req, res) => {
             sql += ' AND provider_id = ?';
             params.push(provider_id);
         }
-        if (category) {
-            sql += ' AND category LIKE ?';
-            params.push(`%${category}%`);
-        }
+        if (category && category.trim() !== '') {
+    sql += ' AND category LIKE ?';
+    params.push(`%${category}%`);
+}
 
         const [rows] = await db.query(sql, params);
         res.json(rows);
