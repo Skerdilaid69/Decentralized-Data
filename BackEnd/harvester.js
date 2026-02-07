@@ -34,7 +34,11 @@ async function harvestCoursera() {
             await db.query(
                 `INSERT INTO courses (provider_id, title, description, category, language, level, url) 
                  VALUES (?, ?, ?, ?, ?, ?, ?) 
-                 ON DUPLICATE KEY UPDATE last_updated = CURRENT_TIMESTAMP`, 
+                 ON DUPLICATE KEY UPDATE 
+                    title = VALUES(title),
+                    description = VALUES(description),
+                    category = VALUES(category),
+                    last_updated = CURRENT_TIMESTAMP`, 
                 values
             );
         }
@@ -67,10 +71,14 @@ async function harvestEdX() {
                 `https://www.edx.org/course/${course.id}`
             ];
 
-            await db.query(
+           await db.query(
                 `INSERT INTO courses (provider_id, title, description, category, language, level, url) 
                  VALUES (?, ?, ?, ?, ?, ?, ?) 
-                 ON DUPLICATE KEY UPDATE last_updated = CURRENT_TIMESTAMP`, // Added for consistency
+                 ON DUPLICATE KEY UPDATE 
+                    title = VALUES(title),
+                    description = VALUES(description),
+                    category = VALUES(category),
+                    last_updated = CURRENT_TIMESTAMP`, 
                 values
             );
         }

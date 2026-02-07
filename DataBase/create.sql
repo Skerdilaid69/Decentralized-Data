@@ -22,9 +22,9 @@ CREATE TABLE courses (
     url VARCHAR(500),
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     cluster_id INT, 
-    FOREIGN KEY (provider_id) REFERENCES providers(id)
+    FOREIGN KEY (provider_id) REFERENCES providers(id),	
+    UNIQUE KEY unique_course_url (url)
 );
-
 CREATE TABLE course_recommendations (
     course_id INT,
     recommended_course_id INT,
