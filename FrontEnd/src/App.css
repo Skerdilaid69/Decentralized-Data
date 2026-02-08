@@ -121,3 +121,50 @@ button:active {
 .register-button:hover {
   background-color: #218838;
 }
+
+.details-page-wrapper {
+  min-height: 80vh; 
+  background: white;
+}
+
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 12px 15px; 
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px; 
+  font-size: 1rem;
+  background-color: #f8f9fa; 
+  box-sizing: border-box; 
+}
+
+input:focus {
+  background-color: white;
+  border-color: #007bff;
+  box-shadow: 0 0 0 4px rgba(0,123,255,0.1);
+}
+
+.auth-toggle-link {
+  color: #007bff;
+  cursor: pointer;
+  font-weight: 600;
+  margin-left: 5px;
+}
+
+.auth-toggle-link:hover {
+  text-decoration: underline;
+}
+
+
+@media (max-width: 600px) {
+  .details-page-wrapper {
+    padding: 20px !important;
+  }
+  
+  .details-header h1 {
+    font-size: 1.8rem; 
+  }
+}

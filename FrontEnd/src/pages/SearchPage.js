@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const SearchPage = () => {
   const [courses, setCourses] = useState([]);
@@ -41,11 +41,56 @@ const SearchPage = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.reload();
+  };
+
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
       <header style={{ borderBottom: '2px solid #eee', marginBottom: '30px', paddingBottom: '20px' }}>
-        <h1 style={{ fontSize: '2.5rem', color: '#333' }}>Course Aggregator</h1>
         
+        {/* TOP ROW: Title + Right Side Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h1 style={{ fontSize: '2.5rem', color: '#333', margin: 0 }}>Course Aggregator</h1>
+          
+          {/* RIGHT SIDE CONTROLS CONTAINER */}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            
+            {/* 1. Dashboard Button */}
+            <Link to="/dashboard">
+              <button style={{ 
+                  backgroundColor: '#007bff', 
+                  color: 'white', 
+                  padding: '10px 20px', 
+                  border: 'none', 
+                  borderRadius: '5px', 
+                  cursor: 'pointer', 
+                  fontWeight: 'bold' 
+              }}>
+                My Dashboard
+              </button>
+            </Link>
+
+            {/* 2. Logout Button */}
+            <button 
+              onClick={handleLogout} 
+              style={{ 
+                  backgroundColor: '#dc3545',
+                  color: 'white', 
+                  padding: '10px 20px', 
+                  border: 'none', 
+                  borderRadius: '5px', 
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* SECOND ROW: Sync Buttons */}
         <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
           <button 
             onClick={() => handleSync('coursera')} 
@@ -61,6 +106,7 @@ const SearchPage = () => {
           </button>
         </div>
 
+        {/* THIRD ROW: Search Filters */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '20px' }}>
           <input 
             type="text" 
@@ -97,6 +143,7 @@ const SearchPage = () => {
         </div>
       </header>
 
+      {/* RESULTS GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
         {courses.length > 0 ? (
           courses.map((course) => (
