@@ -33,3 +33,30 @@ CREATE TABLE course_recommendations (
     FOREIGN KEY (course_id) REFERENCES courses(id),
     FOREIGN KEY (recommended_course_id) REFERENCES courses(id)
 );
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,  
+    email VARCHAR(255) NOT NULL UNIQUE,   
+    hashed_password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE bookmarks (
+    bookmark_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    item_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, item_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    item_id INT NOT NULL,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+
