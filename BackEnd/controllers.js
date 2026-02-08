@@ -1,5 +1,8 @@
-const Course = require('./models');
+const { User, Course } = require('./models'); 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const harvester = require('./harvester');
+require('dotenv').config();
 
 exports.getCourses = async (req, res) => {
     try {
@@ -48,5 +51,55 @@ exports.syncProvider = async (req, res) => {
     } catch (err) {
         console.error("Sync Error:", err.message);
         res.status(500).json({ error: "Failed to sync data from provider." });
+    }
+};
+
+exports.register = async (req, res) => {
+    try {
+        
+        const { username, email, password } = req.body;
+
+        if (!username || !email || !password) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        const existingUser = await User.findByEmail(email);
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email already in use' });
+        }
+
+        const userId = await User.create(username, email, password);
+
+        res.status(201).json({ message: 'User registered successfully', userId });
+    } catch (err) {
+        console.error("Error in register:", err.message);
+        res.status(500).json({ error: "Registration failed" });
+    }
+};
+
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findByEmail(email);
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const match = await bcrypt.compare(password, user.hashed_password);
+        if (!match) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const token = jwt.sign(
+            { userId: user.user_id, username: user.username },
+            process.env.JWT_SECRET, 
+            { expiresIn: '1h' }
+        );
+
+        res.json({ message: 'Login successful', token });
+    } catch (err) {
+        console.error("Error in login:", err.message);
+        res.status(500).json({ error: "Login failed" });
     }
 };
