@@ -1,92 +1,128 @@
-const axios = require('axios');
-const db = require('./db'); 
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const db = require('./db');
 
-async function getProviderId(name, url) {
-    const [rows] = await db.query('SELECT id FROM providers WHERE name = ?', [name]);
-    if (rows.length > 0) return rows[0].id;
-
-    const [result] = await db.query(
-        'INSERT INTO providers (name, website_url) VALUES (?, ?)',
-        [name, url]
-    );
-    return result.insertId;
-}
-
-async function harvestCoursera() {
-    const providerId = await getProviderId('Coursera', 'https://www.coursera.org');
-    
+// --- HELPER 1: Ensure Provider Exists (Run this ONCE, not in the loop) ---
+async function ensureProviderExists() {
     try {
-        const response = await axios.get('https://api.coursera.org/api/courses.v1?limit=10&fields=description,difficultyLevel,primaryLanguages,domainIds');
-        const courses = response.data.elements;
-
-        for (let course of courses) {
-            const values = [
-                providerId,
-                course.id,
-                course.name,
-                course.description || "No description available",
-                course.domainIds ? course.domainIds.join(', ') : 'General', 
-                course.primaryLanguages ? course.primaryLanguages[0] : 'en', 
-                course.difficultyLevel || 'Beginner', 
-                `https://www.coursera.org/learn/${course.slug}` 
-            ];
-
-            await db.query(
-                `INSERT INTO courses (provider_id, external_id, title, description, category, language, level, url) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
-                 ON DUPLICATE KEY UPDATE 
-                    title = VALUES(title),
-                    description = VALUES(description),
-                    category = VALUES(category),
-                    last_updated = CURRENT_TIMESTAMP`, 
-                values
-            );
-        }
-        return courses.length;
+        // We use ID 1 for Microsoft as you requested
+        await db.query(
+            `INSERT IGNORE INTO providers (id, name, website_url) VALUES (1, 'Microsoft Learn', 'https://learn.microsoft.com')`
+        );
+        console.log(`✅ Provider "Microsoft Learn" (ID: 1) verified.`);
     } catch (err) {
-        throw new Error("Coursera Harvest Failed: " + err.message);
+        console.error(`❌ Failed to verify provider:`, err.message);
     }
 }
 
-async function harvestEdX() {
-    const providerId = await getProviderId('edX', 'https://www.edx.org');
-    
-    try {
-        const response = await axios.get('https://courses.edx.org/api/courses/v1/courses/');
-        const courses = response.data.results;
+// --- HELPER 2: Save to DB ---
+async function saveCoursesToDB(courses) {
+    console.log(`Starting import of ${courses.length} courses...`);
+    let newCount = 0;
+    let updateCount = 0;
 
-        for (let course of courses.slice(0, 10)) {
-            const categoryName = (course.subjects && course.subjects.length > 0) 
-                ? course.subjects[0].name 
-                : 'Education'; 
+    for (const course of courses) {
+        // Ensure date is valid
+        const safeDate = course.last_updated ? new Date(course.last_updated) : new Date();
 
-            const values = [
-                providerId,
-                course.id,
-                course.name,
-                course.short_description || "An open course from edX.",
-                categoryName, 
-                "en",
-                "Intermediate", 
-                `https://www.edx.org/course/${course.id}`
-            ];
+        const query = `
+            INSERT INTO courses 
+            (title, description, external_id, url, language, level, provider_id, keywords, last_updated)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                title = VALUES(title),
+                description = VALUES(description),
+                last_updated = VALUES(last_updated),
+                keywords = VALUES(keywords)
+        `;
 
-           await db.query(
-                `INSERT INTO courses (provider_id, external_id, title, description, category, language, level, url) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
-                 ON DUPLICATE KEY UPDATE 
-                    title = VALUES(title),
-                    description = VALUES(description),
-                    category = VALUES(category),
-                    last_updated = CURRENT_TIMESTAMP`, 
-                values
-            );
+        try {
+            const [result] = await db.query(query, [
+                course.title, 
+                course.description, 
+                course.external_id, 
+                course.url, 
+                course.language, 
+                course.level, 
+                course.provider_id, // This will be 1
+                course.keywords,
+                safeDate
+            ]);
+
+            if (result.affectedRows === 1) newCount++;
+            else if (result.affectedRows === 2) updateCount++;
+        } catch (err) {
+            console.error(`Failed to save course "${course.title}":`, err.message);
         }
-        return courses.length > 10 ? 10 : courses.length;
-    } catch (err) {
-        throw new Error("edX Harvest Failed: " + err.message);
     }
+    console.log(`Sync Complete: ${newCount} new, ${updateCount} updated.`);
 }
 
-module.exports = { harvestCoursera, harvestEdX };
+// --- CONNECTOR: Microsoft Learn ---
+exports.harvestMicrosoft = async () => {
+    try {
+        console.log("Reading Microsoft Data file...");
+        
+        // 1. CRITICAL: Create the provider FIRST (before processing courses)
+        await ensureProviderExists();
+
+        // 2. Read File
+        const filePath = path.join(__dirname, 'data', 'microsoft_data.json');
+        
+        if (!fs.existsSync(filePath)) {
+            throw new Error("File not found! Please download https://learn.microsoft.com/api/catalog/ to BackEnd/data/microsoft_data.json");
+        }
+
+        const rawData = fs.readFileSync(filePath, 'utf-8');
+        const data = JSON.parse(rawData);
+        const modules = data.modules || [];
+
+        console.log(`Found ${modules.length} modules. Transforming...`);
+
+        // 3. Transform Data
+        const normalizedCourses = modules.map(item => {
+            const keywordList = [
+                ...(item.roles || []), 
+                ...(item.products || [])
+            ].join(', ');
+
+            return {
+                title: item.title,
+                description: item.summary,
+                external_id: item.uid,
+                url: item.url,
+                language: 'en',
+                level: item.levels && item.levels.length > 0 ? item.levels[0] : 'Beginner',
+                provider_id: 1, // <--- SET TO 1 AS REQUESTED
+                keywords: keywordList,
+                last_updated: item.last_modified
+            };
+        });
+
+        // 4. Save to DB
+        await saveCoursesToDB(normalizedCourses);
+        return { message: "Microsoft Sync Successful!" };
+
+    } catch (err) {
+        console.error("Error harvesting Microsoft:", err);
+        return { error: err.message };
+    }
+};
+
+// --- INITIALIZATION ---
+exports.initializeDatabase = async () => {
+    try {
+        console.log("Checking database status...");
+        const [rows] = await db.query('SELECT COUNT(*) as count FROM courses');
+        
+        if (rows[0].count === 0) {
+            console.log("Database is empty. Starting Automatic Import...");
+            await exports.harvestMicrosoft(); 
+            console.log("Automatic Import Complete!");
+        } else {
+            console.log(`Database already contains ${rows[0].count} courses. Skipping Import.`);
+        }
+    } catch (err) {
+        console.error("Error during automatic initialization:", err.message);
+    }
+};

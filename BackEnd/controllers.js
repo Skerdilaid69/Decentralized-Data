@@ -1,16 +1,46 @@
+const db = require('./db');
 const Course = require('./models');
 const harvester = require('./harvester');
 
 exports.getCourses = async (req, res) => {
     try {
-        const { search, language, level, provider_id, category } = req.query;
+        // 1. Get query parameters (default to Page 1, 10 items per page)
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12; // 12 is good for a 3x4 grid layout
+        const offset = (page - 1) * limit;
+
+        // 2. Build the SQL Query with LIMIT and OFFSET
+        // We also count the TOTAL courses so the frontend knows how many pages exist.
+        const query = `
+            SELECT courses.*, providers.name AS source_name 
+            FROM courses 
+            JOIN providers ON courses.provider_id = providers.id
+            LIMIT ? OFFSET ?
+        `;
+
+        const countQuery = `SELECT COUNT(*) as total FROM courses`;
+
+        // 3. Run both queries
+        const [courses] = await db.query(query, [limit, offset]);
+        const [countResult] = await db.query(countQuery);
         
-        const courses = await Course.getAll(search, language, level, provider_id, category);
-        
-        res.json(courses);
+        const totalCourses = countResult[0].total;
+        const totalPages = Math.ceil(totalCourses / limit);
+
+        // 4. Send a "Smart Response" containing data + pagination info
+        res.json({
+            data: courses,
+            meta: {
+                totalCourses,
+                totalPages,
+                currentPage: page,
+                itemsPerPage: limit
+            }
+        });
+
     } catch (err) {
-        console.error("Error in getCourses:", err.message);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch courses' });
     }
 };
 
