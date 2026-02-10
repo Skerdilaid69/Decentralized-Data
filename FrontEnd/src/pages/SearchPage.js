@@ -98,25 +98,51 @@ const SearchPage = () => {
 
         {/* Filters */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '20px' }}>
+          
+          {/* 1. Search Title */}
           <input 
             type="text" 
             placeholder="Search by title..." 
             style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} // Reset to page 1 on search
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} 
           />
-          <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
+
+          {/* 2. Language */}
+          <select value={language} onChange={(e) => { setLanguage(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Languages</option>
             <option value="en">English</option>
             <option value="el">Greek</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
           </select>
-          <select value={level} onChange={(e) => setLevel(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
+
+          {/* 3. Level */}
+          <select value={level} onChange={(e) => { setLevel(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Levels</option>
             <option value="Beginner">Beginner</option>
             <option value="Intermediate">Intermediate</option>
             <option value="Advanced">Advanced</option>
           </select>
-          {/* Removed Provider Filter since we only have one, but kept logic just in case */}
+
+          {/* 4. Provider (Source) - WAS MISSING */}
+          <select value={providerId} onChange={(e) => { setProviderId(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
+            <option value="">All Sources</option>
+            <option value="1">Microsoft Learn</option>
+            {/* You can add these back if you ever enable them */}
+            {/* <option value="2">Coursera</option> */}
+            {/* <option value="3">edX</option> */}
+          </select>
+
+          {/* 5. Category (Keywords) - WAS MISSING */}
+          <input 
+            type="text" 
+            placeholder="Category (e.g. Python)..." 
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
+            value={category}
+            onChange={(e) => { setCategory(e.target.value); setPage(1); }}
+          />
+
         </div>
       </header>
 

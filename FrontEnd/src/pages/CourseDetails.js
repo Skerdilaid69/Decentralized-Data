@@ -41,7 +41,7 @@ const CourseDetails = () => {
           <section className="cta-section" style={{ marginTop: '30px' }}>
             <a href={course.url} target="_blank" rel="noreferrer">
               <button style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}>
-                Register / Access Course
+                Access Course
               </button>
             </a>
           </section>
