@@ -1,88 +1,54 @@
-import mysql.connector
-import pandas as pd
-from pyspark.sql import SparkSession
-from pyspark.ml.feature import Tokenizer, StopWordsRemover, HashingTF, IDF
-from pyspark.sql.functions import udf
-from pyspark.ml.linalg import Vectors, VectorUDT
 import numpy as np
+from spark_config import get_spark_session, get_db_url, get_db_properties
+from pyspark.ml.feature import Tokenizer, HashingTF, IDF, Normalizer
+from pyspark.sql.functions import col, concat_ws
 
-# 1. Initialize Spark Session
-spark = SparkSession.builder \
-    .appName("CourseSimilarity") \
-    .config("spark.driver.host", "localhost") \
-    .getOrCreate()
+spark = get_spark_session()
+jdbc_url = get_db_url()
+db_props = get_db_properties()
 
-def get_similarity_pipeline():
-    try:
-        # 2. Connect to MySQL and Fetch Data
-        conn = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="Albania100$",
-            database="course_aggregator"
-        )
-        query = "SELECT id, title, description FROM courses"
-        df = pd.read_sql(query, conn)
+try:
+    df = spark.read.jdbc(url=jdbc_url, table="courses", properties=db_props)
+    df_clean = df.withColumn("text_content", concat_ws(" ", col("title"), col("description")))
+
+    tokenizer = Tokenizer(inputCol="text_content", outputCol="words")
+    words_data = tokenizer.transform(df_clean)
+
+    hashing_tf = HashingTF(inputCol="words", outputCol="raw_features", numFeatures=1000)
+    featurized_data = hashing_tf.transform(words_data)
+
+    idf = IDF(inputCol="raw_features", outputCol="features")
+    idf_model = idf.fit(featurized_data)
+    rescaled_data = idf_model.transform(featurized_data)
+
+    normalizer = Normalizer(inputCol="features", outputCol="norm_features")
+    normalized_data = normalizer.transform(rescaled_data)
+
+    data_list = normalized_data.select("id", "norm_features").collect()
+    
+    ids = [row['id'] for row in data_list]
+    vectors = np.array([row['norm_features'].toArray() for row in data_list])
+
+    similarity_matrix = np.dot(vectors, vectors.T)
+
+    recommendations = []
+    for i in range(len(ids)):
+        scores = []
+        for j in range(len(ids)):
+            if i == j: continue
+            score = float(similarity_matrix[i, j])
+            if score > 0.1:
+                scores.append((ids[i], ids[j], score))
         
-        if df.empty:
-            print("⚠️ No courses found in database.")
-            return
+        scores.sort(key=lambda x: x[2], reverse=True)
+        recommendations.extend(scores[:5])
 
-        # Convert to Spark DataFrame
-        ds = spark.createDataFrame(df)
+    rec_df = spark.createDataFrame(recommendations, ["course_id", "recommended_course_id", "similarity_score"])
+    rec_df.write.jdbc(url=jdbc_url, table="course_recommendations", mode="overwrite", properties=db_props)
 
-        # 3. Text Processing Pipeline
-        tokenizer = Tokenizer(inputCol="description", outputCol="words")
-        wordsData = tokenizer.transform(ds)
+    print("\n--- ML Job Completed Successfully ---")
 
-        remover = StopWordsRemover(inputCol="words", outputCol="filtered")
-        filteredData = remover.transform(wordsData)
-
-        # Vectorize using TF-IDF
-        hashingTF = HashingTF(inputCol="filtered", outputCol="rawFeatures", numFeatures=1000)
-        featurizedData = hashingTF.transform(filteredData)
-
-        idf = IDF(inputCol="rawFeatures", outputCol="features")
-        idfModel = idf.fit(featurizedData)
-        rescaledData = idfModel.transform(featurizedData)
-
-        # 4. Calculate Similarity (Cosine Similarity)
-        features = rescaledData.select("id", "features").collect()
-        
-        print("🚀 Calculating similarities...")
-        for i in range(len(features)):
-            current_id = features[i]['id']
-            current_vec = features[i]['features'].toArray()
-            
-            similarities = []
-            for j in range(len(features)):
-                if i == j: continue # Don't compare course to itself
-                
-                other_id = features[j]['id']
-                other_vec = features[j]['features'].toArray()
-                
-                # Cosine Similarity Formula
-                dot_product = np.dot(current_vec, other_vec)
-                norm_a = np.linalg.norm(current_vec)
-                norm_b = np.linalg.norm(other_vec)
-                score = dot_product / (norm_a * norm_b) if (norm_a * norm_b) != 0 else 0
-                
-                if score > 0.1: # Threshold for similarity
-                    similarities.append(str(other_id))
-
-            # 5. Update Database with similar IDs
-            sim_ids_str = ",".join(similarities)
-            cursor = conn.cursor()
-            update_query = "UPDATE courses SET similar_ids = %s WHERE id = %s"
-            cursor.execute(update_query, (sim_ids_str, current_id))
-            conn.commit()
-
-        print("✅ Database updated with recommendations!")
-        conn.close()
-
-    except Exception as e:
-        print(f"❌ Error: {e}")
-
-if __name__ == "__main__":
-    get_similarity_pipeline()
+except Exception as e:
+    print(f"\nCritical Error: {e}")
+finally:
     spark.stop()

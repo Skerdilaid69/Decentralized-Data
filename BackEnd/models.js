@@ -1,38 +1,47 @@
 const db = require('./db');
 
 const Course = {
-    getAll: async (search, language, level, provider_id, category) => {
-        let sql = `
-            SELECT courses.*, providers.name AS source_name 
-            FROM courses 
-            INNER JOIN providers ON courses.provider_id = providers.id 
-            WHERE 1=1
-        `;
+    getAll: async (filters) => {
+        const { search, language, level, provider_id, category, limit, offset } = filters;
+
+        let whereClause = "WHERE 1=1";
         const params = [];
 
         if (search) {
-            sql += ' AND (title LIKE ? OR description LIKE ?)';
+            whereClause += ' AND (title LIKE ? OR description LIKE ?)';
             params.push(`%${search}%`, `%${search}%`);
         }
         if (language) {
-            sql += ' AND language LIKE ?';
-            params.push(`%${language}%`);
+            whereClause += ' AND language = ?';
+            params.push(language);
         }
         if (level) {
-            sql += ' AND level = ?';
+            whereClause += ' AND level = ?';
             params.push(level);
         }
         if (provider_id) {
-            sql += ' AND provider_id = ?';
+            whereClause += ' AND provider_id = ?';
             params.push(provider_id);
         }
         if (category) {
-            sql += ' AND category LIKE ?';
-            params.push(`%${category}%`);
+            whereClause += ' AND (keywords LIKE ? OR category LIKE ?)';
+            params.push(`%${category}%`, `%${category}%`);
         }
 
-        const [rows] = await db.query(sql, params);
-        return rows;
+        const countSql = `SELECT COUNT(*) as total FROM courses ${whereClause}`;
+        const [countResult] = await db.query(countSql, params);
+        const total = countResult[0].total;
+
+        const dataSql = `
+            SELECT courses.*, providers.name AS source_name 
+            FROM courses 
+            INNER JOIN providers ON courses.provider_id = providers.id 
+            ${whereClause} 
+            LIMIT ? OFFSET ?
+        `;
+        const [rows] = await db.query(dataSql, [...params, limit, offset]);
+
+        return { rows, total };
     },
 
     getById: async (id) => {

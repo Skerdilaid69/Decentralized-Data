@@ -1,107 +1,66 @@
-const db = require('./db');
-const harvester = require('./harvester'); 
+const Course = require('./models');
+const harvester = require('./harvester');
 
 exports.getCourses = async (req, res) => {
     try {
-        // A. Setup Pagination
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 12; 
+        const limit = parseInt(req.query.limit) || 12;
         const offset = (page - 1) * limit;
 
-        // B. Setup Filters
-        const { search, language, level, provider_id, category } = req.query;
+        const filters = {
+            search: req.query.search,
+            language: req.query.language,
+            level: req.query.level,
+            provider_id: req.query.provider_id,
+            category: req.query.category,
+            limit,
+            offset
+        };
 
-        // C. Build the SQL Query (Dynamic WHERE clause)
-        // We use "WHERE 1=1" so we can easily add "AND ..." conditions
-        let whereClause = `FROM courses JOIN providers ON courses.provider_id = providers.id WHERE 1=1`;
-        const queryParams = [];
+        const { rows, total } = await Course.getAll(filters);
 
-        // Add Search Logic
-        if (search) {
-            whereClause += ` AND courses.title LIKE ?`;
-            queryParams.push(`%${search}%`);
-        }
-        if (language) {
-            whereClause += ` AND courses.language = ?`;
-            queryParams.push(language);
-        }
-        if (level) {
-            whereClause += ` AND courses.level = ?`;
-            queryParams.push(level);
-        }
-        if (provider_id) {
-            whereClause += ` AND courses.provider_id = ?`;
-            queryParams.push(provider_id);
-        }
-        if (category) {
-            whereClause += ` AND courses.keywords LIKE ?`;
-            queryParams.push(`%${category}%`);
-        }
-
-        // D. Count Total Results (Required for Pagination)
-        // We use the EXACT SAME filters to count accurately
-        const countQuery = `SELECT COUNT(*) as total ${whereClause}`;
-        const [countResult] = await db.query(countQuery, [...queryParams]);
-        const totalCourses = countResult[0].total;
-
-        // E. Fetch the Actual Data (Apply Limit/Offset here)
-        const dataQuery = `SELECT courses.*, providers.name AS source_name ${whereClause} LIMIT ? OFFSET ?`;
-        queryParams.push(limit, offset); // Add pagination params to the end
-
-        const [courses] = await db.query(dataQuery, queryParams);
-        const totalPages = Math.ceil(totalCourses / limit);
-
-        // F. Send Response
         res.json({
-            data: courses,
+            data: rows,
             meta: {
-                totalCourses,
-                totalPages,
-                currentPage: page,
-                itemsPerPage: limit
+                totalCourses: total,
+                totalPages: Math.ceil(total / limit),
+                currentPage: page
             }
         });
-
     } catch (err) {
-        console.error("Error fetching courses:", err);
-        res.status(500).json({ error: 'Failed to fetch courses' });
-    }
-};
-
-// --- 2. GET SINGLE COURSE ---
-exports.getCourseById = async (req, res) => {
-    try {
-        const id = req.params.id;
-        const query = `
-            SELECT courses.*, providers.name AS source_name 
-            FROM courses 
-            JOIN providers ON courses.provider_id = providers.id
-            WHERE courses.id = ?
-        `;
-        const [rows] = await db.query(query, [id]);
-        
-        if (rows.length === 0) return res.status(404).json({ message: "Course not found" });
-
-        // Send the course (you can add recommendations later if needed)
-        res.json({ ...rows[0], recommendations: [] });
-    } catch (err) {
-        console.error("Error in getCourseById:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
 
-// --- 3. SYNC PROVIDER ---
+exports.getCourseById = async (req, res) => {
+    try {
+        const course = await Course.getById(req.params.id);
+        if (!course) return res.status(404).json({ message: "Course not found" });
+        res.json(course);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getRecommendations = async (req, res) => {
+    try {
+        const recommendations = await Course.getRecommendations(req.params.id);
+        res.json(recommendations);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch recommendations." });
+    }
+};
+
 exports.syncProvider = async (req, res) => {
     try {
         const source = req.params.source.toLowerCase();
         if (source === 'microsoft') {
-            await harvester.harvestMicrosoft();
-            res.json({ message: "Microsoft sync completed successfully!" });
+            const result = await harvester.harvestMicrosoft();
+            res.json(result);
         } else {
-            res.json({ message: "Only Microsoft sync is enabled." });
+            res.status(400).json({ message: "Provider not supported." });
         }
     } catch (err) {
-        console.error("Sync Error:", err.message);
-        res.status(500).json({ error: "Failed to sync data." });
+        res.status(500).json({ error: err.message });
     }
 };

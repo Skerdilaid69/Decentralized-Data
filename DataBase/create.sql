@@ -12,7 +12,7 @@ CREATE TABLE providers (
 CREATE TABLE courses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     provider_id INT,
-    external_id VARCHAR(100),
+    external_id VARCHAR(255),
     title VARCHAR(255) NOT NULL,
     description TEXT,
     keywords TEXT, 
