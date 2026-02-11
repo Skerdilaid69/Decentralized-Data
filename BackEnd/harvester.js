@@ -2,8 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./db');
 const { exec } = require('child_process');
+const { spawn } = require('child_process');
 
-const runSparkJob = () => {
+/*const runSparkJob = () => {
     const python = process.env.PYTHON_PATH;
     const script = process.env.SPARK_ML_PATH;
 
@@ -16,8 +17,7 @@ const runSparkJob = () => {
     exec(`"${python}" "${script}"`, options, (error, stdout, stderr) => {
         if (error) return;
         console.log(stdout);
-    });
-};
+    });*/
 
 async function ensureProviderExists() {
     try {
@@ -34,13 +34,14 @@ async function saveCoursesToDB(courses) {
         const safeDate = course.last_updated ? new Date(course.last_updated) : new Date();
         const query = `
             INSERT INTO courses 
-            (title, description, external_id, url, language, level, provider_id, keywords, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (title, description, external_id, url, language, level, provider_id, keywords, category, last_updated)
+            VALUES (?, ?, ?, ?, ?, ?,?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE 
                 title = VALUES(title),
                 description = VALUES(description),
                 last_updated = VALUES(last_updated),
-                keywords = VALUES(keywords)
+                keywords = VALUES(keywords),
+                category = VALUES(category)
         `;
 
         try {
@@ -53,6 +54,7 @@ async function saveCoursesToDB(courses) {
                 course.level, 
                 course.provider_id, 
                 course.keywords,
+                course.category,
                 safeDate
             ]);
         } catch (err) {
@@ -83,12 +85,24 @@ exports.harvestMicrosoft = async () => {
             level: item.levels && item.levels.length > 0 ? item.levels[0] : 'Beginner',
             provider_id: 1,
             keywords: [...(item.roles || []), ...(item.products || [])].join(', '),
+            category: item.products && item.products.length > 0 ? item.products[0] : 'General',
             last_updated: item.last_modified
         }));
 
         await saveCoursesToDB(normalizedCourses);
         
-        runSparkJob();
+        const scriptPath = path.join(__dirname,'..', 'Spark', 'ml_pipeline_ske.py');
+        const pythonProcess = spawn('python3', [scriptPath], {
+            cwd: path.join(__dirname, '..', 'Spark')
+        }); 
+
+        pythonProcess.stdout.on('data', (data) => {
+            console.log(`ML Pipeline Output: ${data}`);
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error(`ML Pipeline Error: ${data}`);
+        });
 
         return { message: "Sync Successful and Spark Job Triggered" };
 
