@@ -8,6 +8,8 @@ const CourseDetails = () => {
   const [course, setCourse] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingRecs, setLoadingRecs] = useState(true);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -42,8 +44,21 @@ const CourseDetails = () => {
         setLoading(false);
       }
     };
+    const fetchRecommendations = async () => {
+      setLoadingRecs(true);
+      try {
+        const res = await fetch(`http://localhost:5001/api/courses/${id}/similar`);
+        const data = await res.json();
+        setRecommendations(data);
+      } catch (err) {
+        console.error("Error fetching recs:", err);
+      } finally {
+        setLoadingRecs(false);
+      }
+    };
 
     fetchDetails();
+    fetchRecommendations();
   }, [id]);
 
   const handleBookmark = async () => {
@@ -83,79 +98,64 @@ const CourseDetails = () => {
   );
 
   return (
-    <div className="details-page-wrapper" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-      <div className="container">
-        <Link to="/" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>← Back to Search</Link>
-        
-        <header className="details-header" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-          <div>
-            <h1 style={{ fontSize: '2.2rem', marginBottom: '10px' }}>{course.title}</h1>
-            <div className="meta-tags" style={{ display: 'flex', gap: '10px' }}>
-              <span style={{ padding: '5px 12px', backgroundColor: '#e9ecef', borderRadius: '20px', fontSize: '0.85rem' }}>{course.source_name || 'Online'}</span>
-              <span style={{ padding: '5px 12px', backgroundColor: '#007bff', color: 'white', borderRadius: '20px', fontSize: '0.85rem' }}>{course.level}</span>
-              <span style={{ padding: '5px 12px', backgroundColor: '#6c757d', color: 'white', borderRadius: '20px', fontSize: '0.85rem' }}>{course.language}</span>
-            </div>
+    <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
+      <Link to="/" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>← Back to Search</Link>
+      
+      <header style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+        <div>
+          <h1 style={{ fontSize: '2.2rem', marginBottom: '10px' }}>{course.title}</h1>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <span style={{ padding: '5px 12px', backgroundColor: '#e9ecef', borderRadius: '20px' }}>{course.source_name}</span>
+            <span style={{ padding: '5px 12px', backgroundColor: '#007bff', color: 'white', borderRadius: '20px' }}>{course.level}</span>
           </div>
+        </div>
 
-          <button 
-            onClick={handleBookmark}
-            style={{
-              background: 'none',
-              border: '1px solid #ddd',
-              borderRadius: '50%',
-              width: '50px',
-              height: '50px',
-              cursor: 'pointer',
-              fontSize: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-              color: isBookmarked ? '#e74c3c' : '#ccc',
-              transition: 'all 0.2s'
-            }}
-            title={isBookmarked ? "Remove from Bookmarks" : "Save to Bookmarks"}
-          >
-            {isBookmarked ? '♥' : '♡'}
+        <button 
+          onClick={handleBookmark}
+          style={{
+            background: 'none', border: '1px solid #ddd', borderRadius: '50%',
+            width: '50px', height: '50px', cursor: 'pointer', fontSize: '1.5rem',
+            color: isBookmarked ? '#e74c3c' : '#ccc'
+          }}
+        >
+          {isBookmarked ? '♥' : '♡'}
+        </button>
+      </header>
+
+      <main style={{ marginTop: '30px' }}>
+        <p style={{ lineHeight: '1.6', color: '#444' }}>{course.description}</p>
+        <a href={course.url} target="_blank" rel="noreferrer">
+          <button style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+            Access Course
           </button>
-        </header>
+        </a>
+      </main>
 
-        <main className="details-content" style={{ marginTop: '30px' }}>
-          <section className="description-section">
-            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Description</h3>
-            <p style={{ lineHeight: '1.6', color: '#444' }}>{course.description}</p>
-          </section>
-
-          <section className="cta-section" style={{ marginTop: '30px' }}>
-            <a href={course.url} target="_blank" rel="noreferrer">
-              <button style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}>
-                Register / Access Course
-              </button>
-            </a>
-          </section>
-        </main>
-
-        <footer className="recommendations-section" style={{ marginTop: '50px' }}>
-          <hr style={{ border: '0', borderTop: '1px solid #eee' }} />
-          <h3>Recommended Similar Courses</h3>
-          <div className="recommendation-list" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '20px' }}>
-            {course.recommendations && course.recommendations.length > 0 ? (
-              course.recommendations.map(rec => (
-                <Link 
-                  key={rec.id} 
-                  to={`/courses/${rec.id}`} 
-                  style={{ textDecoration: 'none', padding: '12px', border: '1px solid #ddd', borderRadius: '10px', backgroundColor: '#f8f9fa', color: '#333', fontSize: '0.9rem' }}
-                >
-                  <strong>{rec.title}</strong>
-                  <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '5px' }}>Source: {rec.source_name}</div>
-                </Link>
-              ))
-            ) : (
-              <p style={{ color: '#888' }}>No recommendations available yet.</p>
-            )}
+      <footer style={{ marginTop: '50px' }}>
+        <hr style={{ border: '0', borderTop: '1px solid #eee' }} />
+        <h3>Recommended Similar Courses</h3>
+        
+        {loadingRecs ? (
+          <div style={{ padding: '20px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px' }}>
+            ⏳ Spark is processing recommendations...
           </div>
-        </footer>
-      </div>
+        ) : recommendations.length > 0 ? (
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '20px' }}>
+            {recommendations.map(rec => (
+              <Link 
+                key={rec.id} 
+                to={`/courses/${rec.id}`} 
+                style={{ textDecoration: 'none', padding: '12px', border: '1px solid #ddd', borderRadius: '10px', backgroundColor: '#f8f9fa', color: '#333' }}
+              >
+                <strong>{rec.title}</strong>
+                <div style={{ fontSize: '0.75rem', color: '#666' }}>Source: {rec.source_name}</div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p>No recommendations available yet.</p>
+        )}
+      </footer>
     </div>
   );
 };

@@ -7,51 +7,74 @@ require('dotenv').config();
 
 exports.getCourses = async (req, res) => {
     try {
-        const { search, language, level, provider_id, category } = req.query;
-        
-        const courses = await Course.getAll(search, language, level, provider_id, category);
-        
-        res.json(courses);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12;
+        const offset = (page - 1) * limit;
+
+        const filters = {
+            search: req.query.search,
+            language: req.query.language,
+            level: req.query.level,
+            provider_id: req.query.provider_id,
+            category: req.query.category,
+            limit,
+            offset
+        };
+
+        const { rows, total } = await Course.getAll(filters);
+
+        res.json({
+            data: rows,
+            meta: {
+                totalCourses: total,
+                totalPages: Math.ceil(total / limit),
+                currentPage: page
+            }
+        });
     } catch (err) {
-        console.error("Error in getCourses:", err.message);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: err.message });
     }
 };
 
 exports.getCourseById = async (req, res) => {
     try {
-        const id = req.params.id;
-        const course = await Course.getById(id);
-
-        if (!course) {
-            return res.status(404).json({ message: "Course not found" });
-        }
-
-        const recommendations = await Course.getRecommendations(id);
-        
-        res.json({ ...course, recommendations });
+        const course = await Course.getById(req.params.id);
+        if (!course) return res.status(404).json({ message: "Course not found" });
+        res.json(course);
     } catch (err) {
-        console.error("Error in getCourseById:", err.message);
         res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getRecommendations = async (req, res) => {
+    try {
+        const recommendations = await Course.getRecommendations(req.params.id);
+        res.json(recommendations);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch recommendations." });
     }
 };
 
 exports.syncProvider = async (req, res) => {
     try {
-        const source = req.params.source.toLowerCase();
+        const result = await harvester.syncAll();
         
-        if (source === 'coursera') {
-            await harvester.harvestCoursera();
-            res.json({ message: "Coursera sync completed successfully!" });
-        } else if (source === 'edx') {
-            await harvester.harvestEdX();
-            res.json({ message: "edX sync completed successfully!" });
-        } else {
-            res.status(400).json({ error: "Invalid source. Use 'coursera' or 'edx'." });
+        if (result.error) {
+            return res.status(500).json({ error: result.error });
         }
+
+        res.json(result);
     } catch (err) {
-        console.error("Sync Error:", err.message);
-        res.status(500).json({ error: "Failed to sync data from provider." });
+        res.status(500).json({ error: "Global sync failed: " + err.message });
+    }
+};
+
+exports.getAnalytics = async (req, res) => {
+    try {
+        const stats = await Course.getAnalytics();
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch analytics: " + err.message });
     }
 };
 

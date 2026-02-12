@@ -3,38 +3,50 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10; 
 
 const Course = {
-    getAll: async (search, language, level, provider_id, category) => {
-        let sql = `
-            SELECT courses.*, providers.name AS source_name 
-            FROM courses 
-            INNER JOIN providers ON courses.provider_id = providers.id 
-            WHERE 1=1
-        `;
+    getAll: async (filters) => {
+        const { search, language, level, provider_id, category, limit, offset } = filters;
+
+        let whereClause = "WHERE 1=1";
         const params = [];
 
         if (search) {
-            sql += ' AND (title LIKE ? OR description LIKE ?)';
+            whereClause += ' AND (title LIKE ? OR description LIKE ?)';
             params.push(`%${search}%`, `%${search}%`);
         }
         if (language) {
-            sql += ' AND language LIKE ?';
-            params.push(`%${language}%`);
-        }
+        const languageArray = language.split(','); 
+        const placeholders = languageArray.map(() => '?').join(', ');
+    
+            whereClause += ` AND language IN (${placeholders})`;
+            params.push(...languageArray);
+}
         if (level) {
-            sql += ' AND level = ?';
+            whereClause += ' AND level = ?';
             params.push(level);
         }
         if (provider_id) {
-            sql += ' AND provider_id = ?';
+            whereClause += ' AND provider_id = ?';
             params.push(provider_id);
         }
         if (category) {
-            sql += ' AND category LIKE ?';
-            params.push(`%${category}%`);
+            whereClause += ' AND (keywords LIKE ? OR category LIKE ?)';
+            params.push(`%${category}%`, `%${category}%`);
         }
 
-        const [rows] = await db.query(sql, params);
-        return rows;
+        const countSql = `SELECT COUNT(*) as total FROM courses ${whereClause}`;
+        const [countResult] = await db.query(countSql, params);
+        const total = countResult[0].total;
+
+        const dataSql = `
+            SELECT courses.*, providers.name AS source_name 
+            FROM courses 
+            INNER JOIN providers ON courses.provider_id = providers.id 
+            ${whereClause} 
+            LIMIT ? OFFSET ?
+        `;
+        const [rows] = await db.query(dataSql, [...params, limit, offset]);
+
+        return { rows, total };
     },
 
     getById: async (id) => {
@@ -60,6 +72,38 @@ const Course = {
         `;
         const [rows] = await db.query(sql, [id]);
         return rows;
+    },
+   getAnalytics: async () => {
+    const providersSql = `
+        SELECT p.name as label, COUNT(c.id) as value 
+        FROM courses c 
+        JOIN providers p ON c.provider_id = p.id 
+        GROUP BY p.name
+    `;
+    
+    const languagesSql = `
+        SELECT language as label, COUNT(*) as value 
+        FROM courses 
+        GROUP BY language
+    `;
+
+    const clustersSql = `
+        SELECT cluster_id as label, COUNT(*) as value 
+        FROM course_clusters 
+        GROUP BY cluster_id
+    `;
+
+    const [providersRes, languagesRes, clustersRes] = await Promise.all([
+        db.query(providersSql),
+        db.query(languagesSql),
+        db.query(clustersSql)
+    ]);
+
+    return {
+        byProvider: providersRes[0],
+        byLanguage: languagesRes[0],
+        byCluster: clustersRes[0]
+    };
     }
 };
 
