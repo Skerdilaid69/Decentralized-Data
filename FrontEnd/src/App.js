@@ -22,9 +22,7 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/" element={<SearchPage />} />
-          <Route path="/courses/:id" element={<CourseDetails />} />
-          <Route path="/analytics" element ={<Analytics />} />
+          <Route path="/auth" element={<Auth />} />
           <Route 
             path="/" 
             element={
@@ -49,10 +47,14 @@ function App() {
               </PrivateRoute>
             } 
           />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<SearchPage />} />
-          <Route path="/courses/:id" element={<CourseDetails />} />
-          <Route path="/analytics" element ={<Analytics />} />
+          <Route 
+            path="/analytics" 
+            element={
+              <PrivateRoute>
+                <Analytics />
+              </PrivateRoute>
+            } 
+          />
         </Routes>
       </div>
     </Router>
