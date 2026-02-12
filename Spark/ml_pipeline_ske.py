@@ -1,12 +1,9 @@
 import mysql.connector
 import numpy as np
 from pyspark.sql import SparkSession
-from pyspark.ml.feature import Tokenizer, StopWordsRemover, HashingTF, IDF
-from pyspark.sql.functions import udf
-from pyspark.ml.linalg import Vectors, VectorUDT
-from pyspark.sql.functions import concat_ws, col, udf # Added missing imports
-from pyspark.ml.feature import Normalizer # Added missing import
-
+from pyspark.ml.feature import Tokenizer, HashingTF, IDF, Normalizer, StopWordsRemover
+from pyspark.ml.clustering import KMeans
+from pyspark.sql.functions import concat_ws, col
 
 DB_HOST = "localhost"
 DB_USER = "root"
@@ -18,11 +15,9 @@ jdbc_url = f"jdbc:mysql://{DB_HOST}:{DB_PORT}/{DB_NAME}"
 db_props = {
     "user": DB_USER,
     "password": DB_PASSWORD,
-    "driver": "com.mysql.cj.jdbc.Driver"
+    "driver": "com.mysql.cj.jdbc.Driver"    
 }
 
-
-# 1. Initialize Spark Session
 spark = SparkSession.builder \
     .appName("CourseSimilarity") \
     .config("spark.driver.host", "localhost") \
@@ -31,13 +26,17 @@ spark = SparkSession.builder \
 
 try:
     df = spark.read.jdbc(url=jdbc_url, table="courses", properties=db_props)
+    df = df.na.fill({"category": "Uncategorized", "title": "", "description": ""})
     df_clean = df.withColumn("text_content", concat_ws(" ", col("title"), col("description")))
 
     tokenizer = Tokenizer(inputCol="text_content", outputCol="words")
     words_data = tokenizer.transform(df_clean)
 
-    hashing_tf = HashingTF(inputCol="words", outputCol="raw_features", numFeatures=1000)
-    featurized_data = hashing_tf.transform(words_data)
+    remover = StopWordsRemover(inputCol="words", outputCol="filtered_words")
+    words_clean = remover.transform(words_data)
+
+    hashing_tf = HashingTF(inputCol="filtered_words", outputCol="raw_features", numFeatures=1000)
+    featurized_data = hashing_tf.transform(words_clean)
 
     idf = IDF(inputCol="raw_features", outputCol="features")
     idf_model = idf.fit(featurized_data)
@@ -46,7 +45,22 @@ try:
     normalizer = Normalizer(inputCol="features", outputCol="norm_features")
     normalized_data = normalizer.transform(rescaled_data)
 
-    data_list = normalized_data.select("id", "norm_features").collect()
+    cat_tokenizer = Tokenizer(inputCol="category", outputCol="cat_words")
+    cat_words = cat_tokenizer.transform(normalized_data)
+
+    cat_hashing = HashingTF(inputCol="cat_words", outputCol="cat_features", numFeatures=200)
+    cat_tf = cat_hashing.transform(cat_words)
+
+    cat_normalizer = Normalizer(inputCol="cat_features", outputCol="cat_norm_features")
+    final_data = cat_normalizer.transform(cat_tf)
+
+    kmeans = KMeans(featuresCol="cat_norm_features", predictionCol="cluster_id", k=5, seed=42)
+    model = kmeans.fit(final_data)
+
+    clustered_data = model.transform(final_data)
+    final_clusters = clustered_data.select(col("id").alias("course_id"), col("cluster_id"))
+    
+    data_list = final_data.select("id", "norm_features").collect()
     
     ids = [row['id'] for row in data_list]
     vectors = np.array([row['norm_features'].toArray() for row in data_list])
@@ -67,6 +81,7 @@ try:
 
     rec_df = spark.createDataFrame(recommendations, ["course_id", "recommended_course_id", "similarity_score"])
     rec_df.write.jdbc(url=jdbc_url, table="course_recommendations", mode="overwrite", properties=db_props)
+    final_clusters.write.jdbc(url=jdbc_url, table="course_clusters", mode="overwrite", properties=db_props)
 
     print("\n--- ML Job Completed Successfully ---")
 

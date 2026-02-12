@@ -112,9 +112,10 @@ const SearchPage = () => {
           <select value={language} onChange={(e) => { setLanguage(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Languages</option>
             <option value="en">English</option>
-            <option value="el">Greek</option>
             <option value="fr">French</option>
             <option value="es">Spanish</option>
+            <option value="ar">Arabic</option>
+            <option value="zh-CN">Chinese</option>
           </select>
 
           {/* 3. Level */}
@@ -129,6 +130,7 @@ const SearchPage = () => {
           <select value={providerId} onChange={(e) => { setProviderId(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option value="">All Sources</option>
             <option value="1">Microsoft Learn</option>
+            <option value="2">Coursera</option>
             {/* You can add these back if you ever enable them */}
             {/* <option value="2">Coursera</option> */}
             {/* <option value="3">edX</option> */}

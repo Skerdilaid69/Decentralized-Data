@@ -1,61 +1,46 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const db = require('./db');
-const { exec } = require('child_process');
 const { spawn } = require('child_process');
 
-/*const runSparkJob = () => {
-    const python = process.env.PYTHON_PATH;
-    const script = process.env.SPARK_ML_PATH;
-
-    if (!python || !script) return;
-
-    const options = {
-        maxBuffer: 1024 * 1024 * 50 
-    };
-
-    exec(`"${python}" "${script}"`, options, (error, stdout, stderr) => {
-        if (error) return;
-        console.log(stdout);
-    });*/
-
-async function ensureProviderExists() {
+async function ensureProvidersExist() {
     try {
         await db.query(
             `INSERT IGNORE INTO providers (id, name, website_url) VALUES (1, 'Microsoft Learn', 'https://learn.microsoft.com')`
+        );
+        await db.query(
+            `INSERT IGNORE INTO providers (id, name, website_url) VALUES (2, 'Coursera', 'https://www.coursera.org')`
         );
     } catch (err) {
         console.error(err.message);
     }
 }
 
-async function saveCoursesToDB(courses) {
-    for (const course of courses) {
-        const safeDate = course.last_updated ? new Date(course.last_updated) : new Date();
-        const query = `
-            INSERT INTO courses 
-            (title, description, external_id, url, language, level, provider_id, keywords, category, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?,?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE 
-                title = VALUES(title),
-                description = VALUES(description),
-                last_updated = VALUES(last_updated),
-                keywords = VALUES(keywords),
-                category = VALUES(category)
-        `;
+async function saveToDatabase(courses) {
+    const query = `
+        INSERT INTO courses 
+        (title, description, external_id, url, language, level, provider_id, keywords, category, last_updated)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+            title = VALUES(title),
+            description = VALUES(description),
+            last_updated = VALUES(last_updated)
+    `;
 
+    for (const course of courses) {
         try {
             await db.query(query, [
-                course.title, 
-                course.description, 
-                course.external_id, 
-                course.url, 
-                course.language, 
-                course.level, 
-                course.provider_id, 
+                course.title,
+                course.description,
+                course.external_id,
+                course.url,
+                course.language,
+                course.level,
+                course.provider_id,
                 course.keywords,
                 course.category,
-                safeDate
+                course.last_updated
             ]);
         } catch (err) {
             console.error(err.message);
@@ -65,18 +50,14 @@ async function saveCoursesToDB(courses) {
 
 exports.harvestMicrosoft = async () => {
     try {
-        await ensureProviderExists();
         const filePath = path.join(__dirname, 'Data', 'microsoft_data.json');
-        
-        if (!fs.existsSync(filePath)) {
-            throw new Error("File not found");
-        }
+        if (!fs.existsSync(filePath)) return;
 
         const rawData = fs.readFileSync(filePath, 'utf-8');
         const data = JSON.parse(rawData);
         const modules = data.modules || [];
 
-        const normalizedCourses = modules.map(item => ({
+        const normalized = modules.map(item => ({
             title: item.title,
             description: item.summary,
             external_id: item.uid,
@@ -86,38 +67,70 @@ exports.harvestMicrosoft = async () => {
             provider_id: 1,
             keywords: [...(item.roles || []), ...(item.products || [])].join(', '),
             category: item.products && item.products.length > 0 ? item.products[0] : 'General',
-            last_updated: item.last_modified
+            last_updated: item.last_modified ? new Date(item.last_modified) : new Date()
         }));
 
-        await saveCoursesToDB(normalizedCourses);
-        
-        const scriptPath = path.join(__dirname,'..', 'Spark', 'ml_pipeline_ske.py');
-        const pythonProcess = spawn('python3', [scriptPath], {
-            cwd: path.join(__dirname, '..', 'Spark')
-        }); 
-
-        pythonProcess.stdout.on('data', (data) => {
-            console.log(`ML Pipeline Output: ${data}`);
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`ML Pipeline Error: ${data}`);
-        });
-
-        return { message: "Sync Successful and Spark Job Triggered" };
-
+        await saveToDatabase(normalized);
     } catch (err) {
-        return { error: err.message };
+        console.error(err.message);
     }
 };
 
-exports.initializeDatabase = async () => {
+exports.harvestCoursera = async () => {
     try {
-        const [rows] = await db.query('SELECT COUNT(*) as count FROM courses');
-        if (rows[0].count === 0) {
-            await exports.harvestMicrosoft(); 
-        }
+        const response = await axios.get('https://api.coursera.org/api/courses.v1', {
+            params: {
+                fields: 'description,primaryLanguages,difficultyLevel,slug',
+                limit: 100
+            }
+        });
+
+        const elements = response.data.elements || [];
+
+        const normalized = elements.map(item => ({
+            title: item.name,
+            description: item.description || 'No description available',
+            external_id: item.id,
+            url: `https://www.coursera.org/learn/${item.slug}`,
+            language: item.primaryLanguages ? item.primaryLanguages[0] : 'en',
+            level: item.difficultyLevel || 'Beginner',
+            provider_id: 2,
+            keywords: 'MOOC, Online Course',
+            category: 'General Education',
+            last_updated: new Date()
+        }));
+
+        await saveToDatabase(normalized);
+        return { success: true, count: elements.length };
     } catch (err) {
         console.error(err.message);
+        throw err;
+    }
+};
+
+const triggerSparkJob = () => {
+    const scriptPath = path.join(__dirname, '..', 'Spark', 'ml_pipeline_ske.py');
+    const pythonProcess = spawn('python3', [scriptPath], {
+        cwd: path.join(__dirname, '..', 'Spark')
+    });
+
+    pythonProcess.stdout.on('data', (data) => {
+        console.log(`Spark Output: ${data}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        console.error(`Spark Error: ${data}`);
+    });
+};
+
+exports.syncAll = async () => {
+    try {
+        await ensureProvidersExist();
+        await exports.harvestMicrosoft();
+        await exports.harvestCoursera();
+        triggerSparkJob();
+        return { message: "Sync complete for all sources. Spark ML triggered." };
+    } catch (err) {
+        return { error: err.message };
     }
 };

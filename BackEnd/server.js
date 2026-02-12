@@ -14,5 +14,5 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
     
-    await harvester.initializeDatabase();
+    await harvester.syncAll();
 });
