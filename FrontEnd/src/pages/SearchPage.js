@@ -4,44 +4,39 @@ import { useNavigate } from 'react-router-dom';
 const SearchPage = () => {
   const [courses, setCourses] = useState([]);
   
-  // Search Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState('');
   const [level, setLevel] = useState('');
   const [providerId, setProviderId] = useState('');
   const [category, setCategory] = useState('');
   
-  // Pagination State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Build the Query String with Page & Limit
     const query = new URLSearchParams({
       search: searchTerm,
       language: language,
       level: level,
       provider_id: providerId,
       category: category,
-      page: page,      // <--- Sending Page Number
-      limit: 12        // <--- Sending Limit (12 items per page)
+      page: page,     
+      limit: 12       
     }).toString();
 
-    // 2. Fetch Data
     fetch(`http://localhost:5001/api/courses?${query}`)
       .then((response) => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
       })
       .then((data) => {
-        // Handle "Paginated" vs "Flat" response automatically
         if (data.data && Array.isArray(data.data)) {
-            setCourses(data.data);               // The courses array
-            setTotalPages(data.meta.totalPages); // Total pages for buttons
+            setCourses(data.data);               
+            setTotalPages(data.meta.totalPages); 
         } else if (Array.isArray(data)) {
-            setCourses(data); // Fallback
+            setCourses(data); 
         } else {
             setCourses([]);
         }
@@ -49,7 +44,6 @@ const SearchPage = () => {
       .catch((error) => console.error('Error fetching courses:', error));
   }, [searchTerm, language, level, providerId, category, page]); 
 
-  // Sync Handler (Only for Microsoft now)
   const handleSync = async (provider) => {
     try {
       const response = await fetch(`http://localhost:5001/api/sync/${provider}`);
@@ -61,7 +55,6 @@ const SearchPage = () => {
     }
   };
 
-  // Pagination Handlers
   const handlePrev = () => {
     if (page > 1) setPage(page - 1);
   };
@@ -71,17 +64,31 @@ const SearchPage = () => {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      <header style={{ borderBottom: '2px solid #eee', marginBottom: '30px', paddingBottom: '20px' }}>
-        <h1 style={{ fontSize: '2.5rem', color: '#333' }}>Course Aggregator</h1>
+   <div style={{ padding: '40px', 
+  maxWidth: '1200px', 
+  margin: '0 auto', 
+  fontFamily: 'Arial, sans-serif',
+  minHeight: '100vh' }}>
+  <header style={{ borderBottom: '2px solid #007bff', marginBottom: '30px', paddingBottom: '20px' }}>
+    <h1 style={{ 
+      fontSize: '2.5rem', 
+      color: '#007bff', 
+      textAlign: 'center',
+      fontFamily: '"Comic Sans MS", "Apple Chancery", cursive',
+      transform: 'skewY(-2deg)',
+      fontWeight: 'bold',
+      /* This creates a "font behind a font" look */
+      textShadow: '5px 5px 0px rgba(0, 123, 255, 0.15)' 
+    }}>
+      myCourses
+    </h1>
         
-        {/* --- ONLY MICROSOFT SYNC BUTTON --- */}
         <div style={{ marginBottom: '20px' }}>
-          <button 
+          <button   
             onClick={() => handleSync('microsoft')} 
             style={{ 
                 padding: '10px 20px', 
-                backgroundColor: '#5c2d91', // Microsoft Purple
+                backgroundColor: '#5c2d91', 
                 color: 'white', 
                 border: 'none', 
                 borderRadius: '5px', 
@@ -96,51 +103,43 @@ const SearchPage = () => {
           </button>
         </div>
 
-        {/* Filters */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '20px' }}>
           
-          {/* 1. Search Title */}
           <input 
             type="text" 
             placeholder="Search by title..." 
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #007bff' }}
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} 
           />
 
-          {/* 2. Language */}
-          <select value={language} onChange={(e) => { setLanguage(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
+          <select value={language} onChange={(e) => { setLanguage(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #007bff' }}>
             <option value="">All Languages</option>
             <option value="en">English</option>
             <option value="fr">French</option>
             <option value="es">Spanish</option>
             <option value="ar">Arabic</option>
-            <option value="zh-CN">Chinese</option>
+            <option value="zh-CN,zh-TW">Chinese</option>
+            <option value="ru">Russian</option>
           </select>
 
-          {/* 3. Level */}
-          <select value={level} onChange={(e) => { setLevel(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
+          <select value={level} onChange={(e) => { setLevel(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #007bff' }}>
             <option value="">All Levels</option>
             <option value="Beginner">Beginner</option>
             <option value="Intermediate">Intermediate</option>
             <option value="Advanced">Advanced</option>
           </select>
 
-          {/* 4. Provider (Source) - WAS MISSING */}
-          <select value={providerId} onChange={(e) => { setProviderId(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}>
+          <select value={providerId} onChange={(e) => { setProviderId(e.target.value); setPage(1); }} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #007bff' }}>
             <option value="">All Sources</option>
             <option value="1">Microsoft Learn</option>
             <option value="2">Coursera</option>
-            {/* You can add these back if you ever enable them */}
-            {/* <option value="2">Coursera</option> */}
-            {/* <option value="3">edX</option> */}
           </select>
 
-          {/* 5. Category (Keywords) - WAS MISSING */}
           <input 
             type="text" 
-            placeholder="Category (e.g. Python)..." 
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
+            placeholder="Category (e.g. azure)..." 
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #007bff' }}
             value={category}
             onChange={(e) => { setCategory(e.target.value); setPage(1); }}
           />
@@ -148,11 +147,10 @@ const SearchPage = () => {
         </div>
       </header>
 
-      {/* Course Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
         {courses.length > 0 ? (
           courses.map((course) => (
-            <div key={course.id} style={{ border: '1px solid #ddd', borderRadius: '15px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={course.id} style={{ border: '1px solid #007bff', borderRadius: '15px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                   <h3 style={{ color: '#007bff', marginBottom: '10px', fontSize: '1.2rem' }}>{course.title}</h3>
                   <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#555' }}>
@@ -174,13 +172,12 @@ const SearchPage = () => {
             </div>
           ))
         ) : (
-          <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '50px', color: '#888' }}>
+          <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '50px', color: '#007bff' }}>
             <h3>No courses found.</h3>
           </div>
         )}
       </div>
 
-      {/* --- PAGINATION CONTROLS --- */}
       <div style={{ marginTop: '40px', paddingBottom: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
         <button 
             onClick={handlePrev} 

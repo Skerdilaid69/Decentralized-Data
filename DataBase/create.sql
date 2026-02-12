@@ -21,7 +21,6 @@ CREATE TABLE courses (
     level VARCHAR(50),
     url VARCHAR(500),
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    cluster_id INT, 
     FOREIGN KEY (provider_id) REFERENCES providers(id),	
     UNIQUE KEY unique_course_url (url)
 );
@@ -32,4 +31,9 @@ CREATE TABLE course_recommendations (
     PRIMARY KEY (course_id, recommended_course_id),
     FOREIGN KEY (course_id) REFERENCES courses(id),
     FOREIGN KEY (recommended_course_id) REFERENCES courses(id)
+);
+CREATE TABLE IF NOT EXISTS course_clusters (
+    course_id INT PRIMARY KEY,
+    cluster_id INT NOT NULL,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );

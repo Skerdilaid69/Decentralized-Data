@@ -9,9 +9,7 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Main search and list view [cite: 61, 68] */}
           <Route path="/" element={<SearchPage />} />
-          {/* Course details page [cite: 72] */}
           <Route path="/courses/:id" element={<CourseDetails />} />
         </Routes>
       </div>

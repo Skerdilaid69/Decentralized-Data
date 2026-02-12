@@ -12,9 +12,12 @@ const Course = {
             params.push(`%${search}%`, `%${search}%`);
         }
         if (language) {
-            whereClause += ' AND language = ?';
-            params.push(language);
-        }
+        const languageArray = language.split(','); 
+        const placeholders = languageArray.map(() => '?').join(', ');
+    
+            whereClause += ` AND language IN (${placeholders})`;
+            params.push(...languageArray);
+}
         if (level) {
             whereClause += ' AND level = ?';
             params.push(level);
