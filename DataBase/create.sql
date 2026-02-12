@@ -60,6 +60,7 @@ CREATE TABLE history (
     user_id INT NOT NULL,
     item_id INT NOT NULL,
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, item_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (item_id) REFERENCES courses(id) ON DELETE CASCADE
 );
