@@ -46,7 +46,7 @@ const SearchPage = () => {
 
   const handleSync = async (provider) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/sync/${provider}`);
+      const response = await fetch(`http://localhost:5001/api/sync/all`);
       const data = await response.json();
       alert(data.message || "Sync started!");
       window.location.reload(); 
@@ -85,10 +85,10 @@ const SearchPage = () => {
         
         <div style={{ marginBottom: '20px' }}>
           <button   
-            onClick={() => handleSync('microsoft')} 
+            onClick={() => handleSync('all')} 
             style={{ 
                 padding: '10px 20px', 
-                backgroundColor: '#5c2d91', 
+                backgroundColor: '#48cef0', 
                 color: 'white', 
                 border: 'none', 
                 borderRadius: '5px', 
@@ -99,7 +99,7 @@ const SearchPage = () => {
                 gap: '8px'
             }}
           >
-            <span>🔄</span> Sync Microsoft Data
+          <span>🔄</span> Sync Data
           </button>
         </div>
 

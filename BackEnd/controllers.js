@@ -53,14 +53,23 @@ exports.getRecommendations = async (req, res) => {
 
 exports.syncProvider = async (req, res) => {
     try {
-        const source = req.params.source.toLowerCase();
-        if (source === 'microsoft') {
-            const result = await harvester.harvestMicrosoft();
-            res.json(result);
-        } else {
-            res.status(400).json({ message: "Provider not supported." });
+        const result = await harvester.syncAll();
+        
+        if (result.error) {
+            return res.status(500).json({ error: result.error });
         }
+
+        res.json(result);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: "Global sync failed: " + err.message });
+    }
+};
+
+exports.getAnalytics = async (req, res) => {
+    try {
+        const stats = await Course.getAnalytics();
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch analytics: " + err.message });
     }
 };

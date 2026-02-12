@@ -70,6 +70,38 @@ const Course = {
         `;
         const [rows] = await db.query(sql, [id]);
         return rows;
+    },
+   getAnalytics: async () => {
+    const providersSql = `
+        SELECT p.name as label, COUNT(c.id) as value 
+        FROM courses c 
+        JOIN providers p ON c.provider_id = p.id 
+        GROUP BY p.name
+    `;
+    
+    const languagesSql = `
+        SELECT language as label, COUNT(*) as value 
+        FROM courses 
+        GROUP BY language
+    `;
+
+    const clustersSql = `
+        SELECT cluster_id as label, COUNT(*) as value 
+        FROM course_clusters 
+        GROUP BY cluster_id
+    `;
+
+    const [providersRes, languagesRes, clustersRes] = await Promise.all([
+        db.query(providersSql),
+        db.query(languagesSql),
+        db.query(clustersSql)
+    ]);
+
+    return {
+        byProvider: providersRes[0],
+        byLanguage: languagesRes[0],
+        byCluster: clustersRes[0]
+    };
     }
 };
 

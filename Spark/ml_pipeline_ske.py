@@ -18,15 +18,24 @@ db_props = {
     "driver": "com.mysql.cj.jdbc.Driver"    
 }
 
-spark = SparkSession.builder \
-    .appName("CourseSimilarity") \
-    .config("spark.driver.host", "localhost") \
-    .config("spark.jars.packages", "mysql:mysql-connector-java:8.0.28") \
-    .getOrCreate()
+def run_clustering(df, jdbc_url, db_props):
+    cat_tokenizer = Tokenizer(inputCol="category", outputCol="cat_words")
+    cat_words = cat_tokenizer.transform(df)
 
-try:
-    df = spark.read.jdbc(url=jdbc_url, table="courses", properties=db_props)
-    df = df.na.fill({"category": "Uncategorized", "title": "", "description": ""})
+    cat_hashing = HashingTF(inputCol="cat_words", outputCol="cat_features", numFeatures=200)
+    cat_tf = cat_hashing.transform(cat_words)
+
+    cat_normalizer = Normalizer(inputCol="cat_features", outputCol="cat_norm_features")
+    final_data = cat_normalizer.transform(cat_tf)
+
+    kmeans = KMeans(featuresCol="cat_norm_features", predictionCol="cluster_id", k=5, seed=42)
+    model = kmeans.fit(final_data)
+
+    clustered_data = model.transform(final_data)
+    final_clusters = clustered_data.select(col("id").alias("course_id"), col("cluster_id"))
+    final_clusters.write.jdbc(url=jdbc_url, table="course_clusters", mode="overwrite", properties=db_props)
+
+def run_similarity(df, spark, jdbc_url, db_props):
     df_clean = df.withColumn("text_content", concat_ws(" ", col("title"), col("description")))
 
     tokenizer = Tokenizer(inputCol="text_content", outputCol="words")
@@ -45,22 +54,7 @@ try:
     normalizer = Normalizer(inputCol="features", outputCol="norm_features")
     normalized_data = normalizer.transform(rescaled_data)
 
-    cat_tokenizer = Tokenizer(inputCol="category", outputCol="cat_words")
-    cat_words = cat_tokenizer.transform(normalized_data)
-
-    cat_hashing = HashingTF(inputCol="cat_words", outputCol="cat_features", numFeatures=200)
-    cat_tf = cat_hashing.transform(cat_words)
-
-    cat_normalizer = Normalizer(inputCol="cat_features", outputCol="cat_norm_features")
-    final_data = cat_normalizer.transform(cat_tf)
-
-    kmeans = KMeans(featuresCol="cat_norm_features", predictionCol="cluster_id", k=5, seed=42)
-    model = kmeans.fit(final_data)
-
-    clustered_data = model.transform(final_data)
-    final_clusters = clustered_data.select(col("id").alias("course_id"), col("cluster_id"))
-    
-    data_list = final_data.select("id", "norm_features").collect()
+    data_list = normalized_data.select("id", "norm_features").collect()
     
     ids = [row['id'] for row in data_list]
     vectors = np.array([row['norm_features'].toArray() for row in data_list])
@@ -81,7 +75,19 @@ try:
 
     rec_df = spark.createDataFrame(recommendations, ["course_id", "recommended_course_id", "similarity_score"])
     rec_df.write.jdbc(url=jdbc_url, table="course_recommendations", mode="overwrite", properties=db_props)
-    final_clusters.write.jdbc(url=jdbc_url, table="course_clusters", mode="overwrite", properties=db_props)
+
+spark = SparkSession.builder \
+    .appName("CourseML") \
+    .config("spark.driver.host", "localhost") \
+    .config("spark.jars.packages", "mysql:mysql-connector-java:8.0.28") \
+    .getOrCreate()
+
+try:
+    raw_df = spark.read.jdbc(url=jdbc_url, table="courses", properties=db_props)
+    df = raw_df.na.fill({"category": "Uncategorized", "title": "", "description": ""})
+
+    run_clustering(df, jdbc_url, db_props)
+    run_similarity(df, spark, jdbc_url, db_props)
 
     print("\n--- ML Job Completed Successfully ---")
 
