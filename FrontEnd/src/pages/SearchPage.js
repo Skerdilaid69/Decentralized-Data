@@ -43,9 +43,23 @@ const styles = {
     alignItems: 'center',
     gap: '8px'
   },
+  logoutButton: {
+    position: 'absolute',
+    top: '45px',
+    right: '130px',
+    padding: '10px 20px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '0.9rem',
+    zIndex: 10
+  },
   analyticsButton: {
     padding: '10px 20px',
-    backgroundColor: '#6f42c1', // Purple
+    backgroundColor: '#6f42c1',
     color: 'white',
     border: 'none',
     borderRadius: '5px',
@@ -146,7 +160,10 @@ const styles = {
     color: '#555'
   }
 };
-
+const handleLogout = () => {
+  console.log("Logging out...");
+  navigate('/login'); 
+};
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -164,7 +181,6 @@ const SearchPage = () => {
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState('');
   const [level, setLevel] = useState('');
@@ -243,6 +259,10 @@ const SearchPage = () => {
 
   return (
    <div style={styles.container}>
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Log Out ➜]
+          </button>
+
       <header style={styles.header}>
         <h1 style={styles.title}>myCourses</h1>
 

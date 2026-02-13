@@ -81,7 +81,7 @@ const Analytics = () => {
                 <section style={{ ...cardStyle, gridColumn: '1 / -1' }}>
                     <h3 style={headerStyle}>Spark ML: Thematic Clusters</h3>
                     <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                        Grouping of courses based on content similarity using Spark MLlib.
+                        Clustering of courses based on category using Kmeans.
                     </p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', marginTop: '15px' }}>
                         {stats.byCluster && stats.byCluster.map((cluster, index) => (
