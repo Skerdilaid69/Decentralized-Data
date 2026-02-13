@@ -113,32 +113,42 @@ exports.harvestCoursera = async () => {
 
 exports.harvestUdemy = async () => {
     try {
-        console.log(" Connecting to Mock CSV API (Port 4000)...");
+        console.log("📡 Connecting to Mock CSV API (Port 4000)...");
         
         // Connect to your 'MockProvider' server
         const response = await axios.get('http://localhost:4000/api/courses');
         const data = response.data;
 
-        console.log(` Received ${data.length} courses from CSV API.`);
+        console.log(`✅ Received ${data.length} courses from CSV API.`);
 
-        const normalized = data.map((item, index) => ({
-            title: item.course_title || item.title || "No Title",
-            description: item.description || "Imported from CSV",
-            external_id: item.course_id || item.id || `csv-${index}`, 
-            url: item.url || `http://localhost:4000/course/${index}`,
-            language: 'en',
-            level: item.level || 'All Levels',
-            provider_id: 3,
-            keywords: item.subject || item.keywords || 'General',
-            category: item.category || 'Imported',
-            last_updated: new Date()
-        }));
+        const normalized = data.map((item, index) => {
+            const subscriberCount = item.num_subscribers || '0';
+            const duration = item.content_duration ? `${item.content_duration} hours` : 'various';
+            const lectures = item.num_lectures || 'several';
+            const subject = item.subject || 'General Topic';
+            
+            const smartDescription = `Join ${subscriberCount} students in this ${item.level || 'online'} course on ${subject}. Features ${duration} of content across ${lectures} lectures.`;
+
+            return {
+                title: item.course_title || "No Title",
+                description: smartDescription, 
+                external_id: item.course_id || `udemy-${index}`, 
+                url: item.url || `http://localhost:4000/course/${index}`,
+                language: 'en',
+                level: item.level || 'All Levels',
+                provider_id: 3, // ID 3 = Udemy
+                keywords: item.subject || 'General',
+                category: item.subject || 'Uncategorized',
+                last_updated: item.published_timestamp ? new Date(item.published_timestamp) : new Date()
+            };
+        });
 
         await saveToDatabase(normalized);
         return { success: true, count: data.length };
 
     } catch (err) {
         console.error(" CSV Harvest Error:", err.message);
+        return { error: err.message };
     }
 };
 
