@@ -1,4 +1,7 @@
 const db = require('./db');
+const bcrypt = require('bcrypt');
+const saltRounds = 10; 
+
 
 const Course = {
     getAll: async (filters) => {
@@ -105,4 +108,31 @@ const Course = {
     }
 };
 
-module.exports = Course;
+const User = {
+    create: async (username, email, password) => {
+        try {
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+            const query = `
+                INSERT INTO users (username, email, hashed_password) 
+                VALUES (?, ?, ?)
+            `;
+
+            const [result] = await db.execute(query, [username, email, hashedPassword]);
+            
+            return result.insertId;
+        } catch (error) {
+            throw error;
+        }
+    },
+    
+    findByEmail: async (email) => {
+        const query = `SELECT * FROM users WHERE email = ?`;
+        
+        const [rows] = await db.execute(query, [email]);
+        
+        return rows[0];
+    }
+};
+
+module.exports = { User, Course }; 

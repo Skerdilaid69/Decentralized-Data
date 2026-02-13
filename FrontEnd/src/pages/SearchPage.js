@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate} from 'react-router-dom';
 
 const styles = {
   container: {
@@ -45,10 +45,24 @@ const styles = {
   },
   logoutButton: {
     position: 'absolute',
-    top: '45px',
+    top: '80  px',
     right: '130px',
     padding: '10px 20px',
     backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '0.9rem',
+    zIndex: 10
+  },
+  DashboardButton: {
+    position: 'absolute',
+    top: '130px',
+    right: '1168px',
+    padding: '10px 20px',
+    backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
     borderRadius: '5px',
@@ -160,10 +174,7 @@ const styles = {
     color: '#555'
   }
 };
-const handleLogout = () => {
-  console.log("Logging out...");
-  navigate('/login'); 
-};
+
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -175,6 +186,15 @@ const useDebounce = (value, delay) => {
 
 const SearchPage = () => {
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    console.log("Logging out...");
+    navigate('/Auth');
+  };
+  const moveDashboard = () => {
+    console.log("Moving to dashboard...");
+    navigate('/dashboard');
+  }
 
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -259,9 +279,13 @@ const SearchPage = () => {
 
   return (
    <div style={styles.container}>
+            <button onClick={moveDashboard} style={styles.DashboardButton}>
+              My Dashboard 📋
+            </button>
+
         <button onClick={handleLogout} style={styles.logoutButton}>
           Log Out ➜]
-          </button>
+          </button> 
 
       <header style={styles.header}>
         <h1 style={styles.title}>myCourses</h1>
