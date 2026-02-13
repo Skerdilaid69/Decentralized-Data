@@ -134,4 +134,49 @@ const User = {
     }
 };
 
-module.exports = { User, Course }; 
+const Bookmark = {
+    find: async (userId, courseId) => {
+        const [rows] = await db.query('SELECT * FROM bookmarks WHERE user_id = ? AND item_id = ?', [userId, courseId]);
+        return rows[0];
+    },
+    add: async (userId, courseId) => {
+        return await db.query('INSERT INTO bookmarks (user_id, item_id) VALUES (?, ?)', [userId, courseId]);
+    },
+    remove: async (bookmarkId) => {
+        return await db.query('DELETE FROM bookmarks WHERE bookmark_id = ?', [bookmarkId]);
+    },
+    getAllByUser: async (userId) => {
+        const query = `
+            SELECT c.*, b.created_at as bookmarked_at 
+            FROM bookmarks b
+            JOIN courses c ON b.item_id = c.id
+            WHERE b.user_id = ?
+            ORDER BY b.created_at DESC
+        `;
+        const [rows] = await db.query(query, [userId]);
+        return rows;
+    }
+};
+
+const History = {
+    upsert: async (userId, courseId) => {
+        return await db.query(
+            'INSERT INTO history (user_id, item_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE viewed_at = CURRENT_TIMESTAMP',
+            [userId, courseId]
+        );
+    },
+    getAllByUser: async (userId) => {
+        const query = `
+            SELECT c.*, h.viewed_at 
+            FROM history h
+            JOIN courses c ON h.item_id = c.id
+            WHERE h.user_id = ?
+            ORDER BY h.viewed_at DESC
+            LIMIT 20
+        `;
+        const [rows] = await db.query(query, [userId]);
+        return rows;
+    }
+};
+
+module.exports = { User, Course, Bookmark, History };

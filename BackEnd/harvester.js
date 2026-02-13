@@ -12,6 +12,9 @@ async function ensureProvidersExist() {
         await db.query(
             `INSERT IGNORE INTO providers (id, name, website_url) VALUES (2, 'Coursera', 'https://www.coursera.org')`
         );
+        await db.query(
+            `INSERT IGNORE INTO providers (id, name, website_url) VALUES (3, 'Udemy', 'https://www.udemy.com')`
+        );
     } catch (err) {
         console.error(err.message);
     }
@@ -108,6 +111,37 @@ exports.harvestCoursera = async () => {
     }
 };
 
+exports.harvestUdemy = async () => {
+    try {
+        console.log(" Connecting to Mock CSV API (Port 4000)...");
+        
+        // Connect to your 'MockProvider' server
+        const response = await axios.get('http://localhost:4000/api/courses');
+        const data = response.data;
+
+        console.log(` Received ${data.length} courses from CSV API.`);
+
+        const normalized = data.map((item, index) => ({
+            title: item.course_title || item.title || "No Title",
+            description: item.description || "Imported from CSV",
+            external_id: item.course_id || item.id || `csv-${index}`, 
+            url: item.url || `http://localhost:4000/course/${index}`,
+            language: 'en',
+            level: item.level || 'All Levels',
+            provider_id: 3,
+            keywords: item.subject || item.keywords || 'General',
+            category: item.category || 'Imported',
+            last_updated: new Date()
+        }));
+
+        await saveToDatabase(normalized);
+        return { success: true, count: data.length };
+
+    } catch (err) {
+        console.error(" CSV Harvest Error:", err.message);
+    }
+};
+
 const triggerSparkJob = () => {
     const scriptPath = path.join(__dirname, '..', 'Spark', 'ml_pipeline_ske.py');
     const pythonProcess = spawn('python3', [scriptPath], {
@@ -128,6 +162,7 @@ exports.syncAll = async () => {
         await ensureProvidersExist();
         await exports.harvestMicrosoft();
         await exports.harvestCoursera();
+        await exports.harvestUdemy();
         triggerSparkJob();
         return { message: "Sync complete for all sources. Spark ML triggered." };
     } catch (err) {

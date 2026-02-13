@@ -1,5 +1,4 @@
-const db = require('./db');
-const { User, Course } = require('./models'); 
+const { User, Course, Bookmark, History } = require('./models'); 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const harvester = require('./harvester');
@@ -133,16 +132,13 @@ exports.toggleBookmark = async (req, res) => {
         const { courseId } = req.body;
         const userId = req.user.userId;
 
-        const [existing] = await db.query(
-            'SELECT * FROM bookmarks WHERE user_id = ? AND item_id = ?', 
-            [userId, courseId]
-        );
+        const existing = await Bookmark.find(userId, courseId);
 
-        if (existing.length > 0) {
-            await db.query('DELETE FROM bookmarks WHERE bookmark_id = ?', [existing[0].bookmark_id]);
+        if (existing) {
+            await Bookmark.remove(existing.bookmark_id);
             res.json({ message: 'Bookmark removed', isBookmarked: false });
         } else {
-            await db.query('INSERT INTO bookmarks (user_id, item_id) VALUES (?, ?)', [userId, courseId]);
+            await Bookmark.add(userId, courseId);
             res.json({ message: 'Bookmark added', isBookmarked: true });
         }
     } catch (err) {
@@ -153,15 +149,12 @@ exports.toggleBookmark = async (req, res) => {
 
 exports.checkBookmark = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const { courseId } = req.params; // Get course ID from URL
         const userId = req.user.userId;
 
-        const [rows] = await db.query(
-            'SELECT * FROM bookmarks WHERE user_id = ? AND item_id = ?', 
-            [userId, courseId]
-        );
+        const existing = await Bookmark.find(userId, courseId);
 
-        res.json({ isBookmarked: rows.length > 0 });
+        res.json({ isBookmarked: !!existing });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to check bookmark status' });
@@ -172,11 +165,7 @@ exports.addToHistory = async (req, res) => {
     try {
         const { courseId } = req.body;
         const userId = req.user.userId;
-
-        await db.query(
-            'INSERT INTO history (user_id, item_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE viewed_at = CURRENT_TIMESTAMP',
-            [userId, courseId]
-        );
+        await History.upsert(userId, courseId);
         res.json({ message: 'History updated' });
     } catch (err) {
         console.error(err);
@@ -186,15 +175,8 @@ exports.addToHistory = async (req, res) => {
 
 exports.getBookmarks = async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const query = `
-            SELECT c.*, b.created_at as bookmarked_at 
-            FROM bookmarks b
-            JOIN courses c ON b.item_id = c.id
-            WHERE b.user_id = ?
-            ORDER BY b.created_at DESC
-        `;
-        const [rows] = await db.query(query, [userId]);
+       const userId = req.user.userId;
+        const rows = await Bookmark.getAllByUser(userId);
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -205,15 +187,7 @@ exports.getBookmarks = async (req, res) => {
 exports.getHistory = async (req, res) => {
     try {
         const userId = req.user.userId;
-        const query = `
-            SELECT c.*, h.viewed_at 
-            FROM history h
-            JOIN courses c ON h.item_id = c.id
-            WHERE h.user_id = ?
-            ORDER BY h.viewed_at DESC
-            LIMIT 20
-        `;
-        const [rows] = await db.query(query, [userId]);
+        const rows = await History.getAllByUser(userId);
         res.json(rows);
     } catch (err) {
         console.error(err);
