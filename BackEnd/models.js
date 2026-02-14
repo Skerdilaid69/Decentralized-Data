@@ -88,12 +88,13 @@ const Course = {
         GROUP BY language
     `;
 
-    const clustersSql = `
-        SELECT cluster_id as label, COUNT(*) as value 
-        FROM course_clusters 
-        GROUP BY cluster_id
+   const clustersSql = `
+    SELECT c.category AS label, COUNT(*) AS value 
+    FROM course_clusters cc
+    JOIN courses c ON cc.course_id = c.id
+    GROUP BY c.category
     `;
-
+    
     const [providersRes, languagesRes, clustersRes] = await Promise.all([
         db.query(providersSql),
         db.query(languagesSql),
