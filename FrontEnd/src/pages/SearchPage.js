@@ -45,8 +45,8 @@ const styles = {
   },
   logoutButton: {
     position: 'absolute',
-    top: '80  px',
-    right: '130px',
+    top: '50px',
+    right: '140px',
     padding: '10px 20px',
     backgroundColor: '#dc3545',
     color: 'white',
@@ -60,7 +60,7 @@ const styles = {
   DashboardButton: {
     position: 'absolute',
     top: '130px',
-    right: '1168px',
+    right: '1176px',
     padding: '10px 20px',
     backgroundColor: '#007bff',
     color: 'white',

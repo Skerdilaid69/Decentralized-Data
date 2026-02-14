@@ -102,12 +102,12 @@ const CourseDetails = () => {
       <Link 
         to="/"  
         style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#555', textDecoration: 'none', fontWeight: '500', padding: '8px 12px', borderRadius: '6px', transition: 'background-color 0.2s' }}
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#007bff'; e.currentTarget.style.color = '#333'; }} // Subtle hover effect
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#007bff'; e.currentTarget.style.color = '#333'; }} 
         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#555'; }}>
         <span>←</span> Back to Search
         </Link>
       
-      <header style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+      <header style={{ marginTop: '20px', display: 'flex', border: '1px solid #78b4f4ff', justifyContent: 'space-between', alignItems: 'start' }}>
         <div>
           <h1 style={{ fontSize: '2.2rem', marginBottom: '10px' }}>{course.title}</h1>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -120,7 +120,7 @@ const CourseDetails = () => {
           onClick={handleBookmark}
           style={{
             background: 'none', border: '1px solid #ddd', borderRadius: '50%',
-            width: '50px', height: '50px', cursor: 'pointer', fontSize: '1.5rem',
+            width: '80px', height: '50px', cursor: 'pointer', fontSize: '1.5rem',
             color: isBookmarked ? '#e74c3c' : '#ccc'
           }}
         >
@@ -128,15 +128,15 @@ const CourseDetails = () => {
         </button>
       </header>
 
-      <main style={{ marginTop: '30px' }}>
+      <main style={{ marginTop: '30px',backgroundColor: '#a8f8f6ff' }}>
         <p style={{ lineHeight: '1.6', color: '#444' }}>{course.description}</p>
-        <a href={course.url} target="_blank" rel="noreferrer">
+        
+      </main>
+<a href={course.url} target="_blank" rel="noreferrer">
           <button style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
             Access Course
           </button>
-        </a>
-      </main>
-
+        </a>  
       <footer style={{ marginTop: '50px' }}>
         <hr style={{ border: '0', borderTop: '1px solid #eee' }} />
         <h3>Recommended Similar Courses</h3>
@@ -151,7 +151,7 @@ const CourseDetails = () => {
               <Link 
                 key={rec.id} 
                 to={`/courses/${rec.id}`} 
-                style={{ textDecoration: 'none', padding: '12px', border: '1px solid #ddd', borderRadius: '10px', backgroundColor: '#f8f9fa', color: '#333' }}
+                style={{ textDecoration: 'none', padding: '12px', border: '1px solid #007bff', borderRadius: '10px', backgroundColor: '#f8f9fa', color: '#333' }}
               >
                 <strong>{rec.title}</strong>
                 <div style={{ fontSize: '0.75rem', color: '#666' }}>Source: {rec.source_name}</div>

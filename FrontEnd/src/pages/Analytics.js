@@ -125,7 +125,7 @@ const listStyle = { listStyle: 'none', padding: 0 };
 const listItemStyle = { padding: '10px 0', borderBottom: '1px solid #f1f1f1', fontSize: '1rem', color: '#333' };
 
 const clusterBadgeStyle = {
-    backgroundColor: '#007bff',
+    backgroundColor: '#003cffff',
     color: '#fff',
     padding: '15px',
     borderRadius: '10px',

@@ -47,34 +47,138 @@ const Auth = () => {
     }
   };
 
+  const styles = {
+    wrapper: {
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#4fa0f6ff', 
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      padding: '20px'
+    },
+    card: {
+      backgroundColor: '#7de2f2ff',
+      width: '100%',
+      maxWidth: '420px', 
+      padding: '40px',
+      borderRadius: '12px',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)', 
+      textAlign: 'center'
+    },
+    header: {
+      marginBottom: '30px'
+    },
+    title: {
+    fontSize: '2.5rem',
+    color: '#007bff',
+    textAlign: 'center',
+    fontFamily: '"Comic Sans MS", "Apple Chancery", cursive',
+    transform: 'skewY(-2deg)',
+    fontWeight: 'bold',
+    textShadow: '5px 5px 0px rgba(0, 123, 255, 0.15)',
+    marginBottom: '30px'
+  },
+    pill: {
+      display: 'inline-block',
+      padding: '6px 16px',
+      backgroundColor: '#e7f5ff',
+      color: '#007bff',
+      borderRadius: '50px',
+      fontSize: '0.85rem',
+      fontWeight: '600',
+      letterSpacing: '0.5px'
+    },
+    sectionTitle: {
+      fontSize: '1.1rem',
+      color: '#555',
+      marginBottom: '25px',
+      fontWeight: '500'
+    },
+    inputGroup: {
+      marginBottom: '20px',
+      textAlign: 'left'
+    },
+    label: {
+      display: 'block',
+      marginBottom: '8px',
+      fontSize: '0.9rem',
+      fontWeight: '600',
+      color: '#343a40'
+    },
+    input: {
+      width: '100%',
+      padding: '12px 15px',
+      border: '1px solid #ced4da',
+      borderRadius: '8px',
+      fontSize: '1rem',
+      backgroundColor: '#f8f9fa',
+      outline: 'none',
+      transition: 'all 0.2s',
+      boxSizing: 'border-box'
+    },
+    button: {
+      width: '100%',
+      padding: '14px',
+      backgroundColor: '#007bff',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      fontSize: '1.1rem',
+      fontWeight: '600',
+      cursor: 'pointer',
+      marginTop: '10px',
+      transition: 'background-color 0.2s',
+      boxShadow: '0 4px 6px rgba(0, 123, 255, 0.2)'
+    },
+    msgBox: {
+      marginTop: '20px',
+      padding: '12px',
+      borderRadius: '8px',
+      fontSize: '0.95rem',
+      lineHeight: '1.4'
+    },
+    footer: {
+      marginTop: '25px',
+      paddingTop: '20px',
+      borderTop: '1px solid #eee',
+      fontSize: '0.95rem',
+      color: '#6c757d'
+    },
+    link: {
+      color: '#007bff',
+      cursor: 'pointer',
+      fontWeight: '600',
+      marginLeft: '5px',
+      textDecoration: 'none'
+    }
+  };
+
   return (
-    <div className="auth-page-wrapper" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto', minHeight: '80vh', background: 'white' }}>
-      <div className="container">
+    <div className="auth-page-wrapper" style={styles.wrapper}>
+      <div className="container" style={styles.card}>
         
-        {/* HEADER - Updated Text */}
-        <header className="auth-header" style={{ marginTop: '20px', marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '2.2rem', color: '#333' }}>
-            {isLogin ? 'Welcome' : 'Create Account'}
+                <header className="auth-header" style={styles.header}>
+          <h1 style={styles.title}>
+            {isLogin ? 'myCourses' : 'Create Account'}
           </h1>
-          <div className="meta-tags" style={{ marginTop: '10px' }}>
-            <span style={{ padding: '5px 12px', backgroundColor: '#e9ecef', borderRadius: '20px', fontSize: '0.85rem', color: '#333' }}>
+          <div className="meta-tags">
+            <span style={styles.pill}>
               {isLogin ? 'Secure Login' : 'New Member'}
             </span>
           </div>
         </header>
-
-        {/* MAIN CONTENT */}
-        <main className="auth-content" style={{ marginTop: '30px', maxWidth: '600px' }}>
+        <main className="auth-content">
           <section className="description-section">
-            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px', color: '#333' }}>
-              {isLogin ? 'Enter your credentials' : 'Fill in your details'}
+            <h3 style={styles.sectionTitle}>
+              {isLogin ? '' : 'Fill in your details'}
             </h3>
             
-            <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+            <form onSubmit={handleSubmit}>
               
               {!isLogin && (
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#444' }}>Username</label>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Username</label>
                   <input 
                     type="text" 
                     name="username" 
@@ -82,13 +186,13 @@ const Auth = () => {
                     value={formData.username} 
                     onChange={handleChange} 
                     required 
-                    style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem' }}
+                    style={styles.input}
                   />
                 </div>
               )}
 
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#444' }}>Email Address</label>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Email Address</label>
                 <input 
                   type="email" 
                   name="email" 
@@ -96,12 +200,12 @@ const Auth = () => {
                   value={formData.email} 
                   onChange={handleChange} 
                   required 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem' }}
+                  style={styles.input}
                 />
               </div>
 
-              <div style={{ marginBottom: '30px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#444' }}>Password</label>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Password</label>
                 <input 
                   type="password" 
                   name="password" 
@@ -109,28 +213,32 @@ const Auth = () => {
                   value={formData.password} 
                   onChange={handleChange} 
                   required 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem' }}
+                  style={styles.input}
                 />
               </div>
 
-              <button type="submit" style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', width: '100%' }}>
+              <button type="submit" style={styles.button}>
                 {isLogin ? 'Login to Dashboard' : 'Register Account'}
               </button>
             </form>
 
             {message && (
-              <div style={{ marginTop: '20px', padding: '15px', borderRadius: '8px', backgroundColor: message.includes('❌') ? '#f8d7da' : '#d4edda', color: message.includes('❌') ? '#721c24' : '#155724' }}>
+              <div style={{
+                ...styles.msgBox,
+                backgroundColor: message.includes('❌') ? '#ffebee' : '#e8f5e9',
+                color: message.includes('❌') ? '#c62828' : '#2e7d32'
+              }}>
                 {message}
               </div>
             )}
           </section>
 
-          <footer style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-            <p style={{ color: '#444', fontSize: '1rem' }}>
-              {isLogin ? "Don't have an account yet? " : "Already have an account? "}
+          <footer style={styles.footer}>
+            <p>
+              {isLogin ? "Don't have an account yet?" : "Already have an account?"}
               <span 
                 onClick={() => setIsLogin(!isLogin)} 
-                style={{ color: '#007bff', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
+                style={styles.link}
               >
                 {isLogin ? 'Register here' : 'Login here'}
               </span>
