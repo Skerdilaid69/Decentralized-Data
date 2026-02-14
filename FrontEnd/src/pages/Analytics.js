@@ -42,7 +42,7 @@ const Analytics = () => {
                 <Link 
                     to="/"  
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#555', textDecoration: 'none', fontWeight: '500', padding: '8px 12px', borderRadius: '6px', transition: 'background-color 0.2s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#007bff'; e.currentTarget.style.color = '#333'; }} // Subtle hover effect
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#007bff'; e.currentTarget.style.color = '#333'; }} 
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#555'; }}
                 >
                     <span>←</span> Back to Search
@@ -66,7 +66,6 @@ const Analytics = () => {
                     </ul>
                 </section>
 
-                
                 <section style={cardStyle}>
                     <h3 style={headerStyle}>Language Diversity</h3>
                     <ul style={listStyle}>
@@ -81,13 +80,13 @@ const Analytics = () => {
                 <section style={{ ...cardStyle, gridColumn: '1 / -1' }}>
                     <h3 style={headerStyle}>Spark ML: Thematic Clusters</h3>
                     <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                        Clustering of courses based on category using Kmeans.
+                        Grouping of courses based on content similarity and weighted category analysis.
                     </p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', marginTop: '15px' }}>
                         {stats.byCluster && stats.byCluster.map((cluster, index) => (
                             <div key={index} style={clusterBadgeStyle}>
-                                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Cluster ID</div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{cluster.label}</div>
+                                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Thematic Group</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: '5px 0' }}>{cluster.label}</div>
                                 <div style={{ fontSize: '0.9rem' }}>{cluster.value} Courses</div>
                             </div>
                         ))}
@@ -125,13 +124,13 @@ const listStyle = { listStyle: 'none', padding: 0 };
 const listItemStyle = { padding: '10px 0', borderBottom: '1px solid #f1f1f1', fontSize: '1rem', color: '#333' };
 
 const clusterBadgeStyle = {
-    backgroundColor: '#003cffff',
+    backgroundColor: '#007bff',
     color: '#fff',
     padding: '15px',
     borderRadius: '10px',
-    minWidth: '120px',
+    minWidth: '150px',
     textAlign: 'center',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
 };
 
-export default Analytics;   
+export default Analytics;

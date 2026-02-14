@@ -4,6 +4,8 @@ from pyspark.sql import SparkSession
 from pyspark.ml.feature import Tokenizer, HashingTF, IDF, Normalizer, StopWordsRemover
 from pyspark.ml.clustering import KMeans
 from pyspark.sql.functions import concat_ws, col
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 
 DB_HOST = "localhost"
 DB_USER = "root"
@@ -32,6 +34,15 @@ def run_clustering(df, jdbc_url, db_props):
     model = kmeans.fit(final_data)
 
     clustered_data = model.transform(final_data)
+
+    category_counts = clustered_data.groupBy("cluster_id", "category").agg(F.count("*").alias("cnt"))
+    window_spec = Window.partitionBy("cluster_id").orderBy(F.desc("cnt"))
+    cluster_labels = category_counts.withColumn("rank", F.row_number().over(window_spec)) \
+        .filter(col("rank") == 1) \
+        .select(col("cluster_id"), col("category").alias("cluster_name"))
+    
+    cluster_labels.write.jdbc(url=jdbc_url, table="cluster_labels", mode="overwrite", properties=db_props)
+
     final_clusters = clustered_data.select(col("id").alias("course_id"), col("cluster_id"))
     final_clusters.write.jdbc(url=jdbc_url, table="course_clusters", mode="overwrite", properties=db_props)
 
