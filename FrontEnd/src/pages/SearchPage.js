@@ -337,6 +337,7 @@ const SearchPage = () => {
             <option value="">All Sources</option>
             <option value="1">Microsoft Learn</option>
             <option value="2">Coursera</option>
+            <option value="3">Udemy</option>
           </select>
 
           <input 
