@@ -34,11 +34,12 @@ Github Repository of 2025-26 Project in Decentralized Data Engineering and Techn
 
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=siout@s7
+DB_PASSWORD=To δικο σας password
 DB_NAME=course_aggregator
 DB_PORT=3306
-JWT_SECRET=se55555....
-MYSQL_JAR_PATH=/path/to/mysql-connector-java-8.0.28.jar
+JWT_SECRET=se55555
+
+
 
 ---
 
@@ -60,9 +61,10 @@ MYSQL_JAR_PATH=/path/to/mysql-connector-java-8.0.28.jar
 
 ## 6. Οδηγίες Εκτέλεσης
 
-1. **Εκκίνηση Back-End**: Εκτελέστε `node server.js`. Ο server εκτελεί αυτόματα έναν αρχικό συγχρονισμό δεδομένων κατά την εκκίνηση.
-2. **Εκκίνηση Front-End**: Εκτελέστε `npm start` στο φάκελο του FrontEnd. Η εφαρμογή είναι διαθέσιμη στο http://localhost:3000.
-3. **Εκτέλεση Spark ML Job**: Τρέξτε χειροκίνητα την εντολή `python ml_pipeline_Windows.py` για τον υπολογισμό των συστάσεων και των clusters.
+1. **MockProvider**: Kνατε Cd MockProvider και εκτελέστε `node mock_server.js`. Ο server εκτελεί αυτόματα έναν αρχικό συγχρονισμό δεδομένων κατά την εκκίνηση.
+2.  **Εκκίνηση Back-End**: Εκτελέστε `node server.js`. Ο server εκτελεί αυτόματα έναν αρχικό συγχρονισμό δεδομένων κατά την εκκίνηση.
+3. **Εκκίνηση Front-End**: Εκτελέστε `npm start` στο φάκελο του FrontEnd. Η εφαρμογή είναι διαθέσιμη στο http://localhost:3000.
+4. **Εκτέλεση Spark ML Job**: Τρέξτε χειροκίνητα την εντολή `python ml_pipeline_Windows.py` (αν είστε μονο σε windows).
 
 ---
 
@@ -76,12 +78,6 @@ MYSQL_JAR_PATH=/path/to/mysql-connector-java-8.0.28.jar
 * **Analytics**: Απεικόνιση στατιστικών για την κατανομή των μαθημάτων.
 
 ---
-
-### Μαθηματική Τεκμηρίωση Συστάσεων
-
-Η ομοιότητα μεταξύ δύο μαθημάτων $A$ και $B$ υπολογίζεται μέσω του Cosine Similarity στα διανύσματα TF-IDF:
-
-$$\text{similarity}(A, B) = \frac{\mathbf{A} \cdot \mathbf{B}}{\|\mathbf{A}\| \|\mathbf{B}\|}$$
 
 
 
