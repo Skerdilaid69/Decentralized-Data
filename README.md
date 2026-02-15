@@ -2,7 +2,7 @@
 Github Repository of 2025-26 Project in Decentralized Data Engineering and Technologies
 # Course Aggregator & ML Recommender System
 
-Αυτό το project υλοποιεί έναν **Horizontal Aggregator Ανοικτών Μαθημάτων** που συγκεντρώνει δεδομένα από πολλαπλές πηγές.pdf]. Προσφέρει μια ενιαία διεπαφή αναζήτησης σε React και χρησιμοποιεί **Apache Spark** για επεξεργασία δεδομένων μεγάλης κλίμακας, παραγωγή συστάσεων και ομαδοποίηση μαθημάτων.pdf].
+Αυτό το project υλοποιεί έναν **Horizontal Aggregator Ανοικτών Μαθημάτων** που συγκεντρώνει δεδομένα από πολλαπλές πηγές.pdf]. Προσφέρει μια ενιαία διεπαφή αναζήτησης σε React και χρησιμοποιεί **Apache Spark** για επεξεργασία δεδομένων μεγάλης κλίμακας, παραγωγή συστάσεων και ομαδοποίηση μαθημάτων.
 
 ---
 
