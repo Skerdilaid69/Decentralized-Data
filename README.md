@@ -33,10 +33,15 @@ Github Repository of 2025-26 Project in Decentralized Data Engineering and Techn
 3. Δημιουργήστε ένα αρχείο **.env** στον φάκελο `BackEnd` με την εξής δομή:
 
 DB_HOST=localhost
+
 DB_USER=root
+
 DB_PASSWORD=To δικο σας password
+
 DB_NAME=course_aggregator
+
 DB_PORT=3306
+
 JWT_SECRET=se55555
 
 
@@ -77,8 +82,4 @@ JWT_SECRET=se55555
 * **Personalization**: Υποστήριξη λογαριασμών χρηστών με Bookmarks και Ιστορικό προβολών.
 * **Analytics**: Απεικόνιση στατιστικών για την κατανομή των μαθημάτων.
 
----
-
-
-
-Επειδή τα διανύσματα κανονικοποιούνται από το Spark ML Pipeline, ο υπολογισμός γίνεται μέσω του εσωτερικού γινομένου των διανυσμάτων.
+-
